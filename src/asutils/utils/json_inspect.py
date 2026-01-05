@@ -26,9 +26,9 @@ def _get_tree_prefix(depth: int, is_last: bool = False, prefix_chars: str = '') 
     return prefix_chars + current
 
 
-def _format_content(content: Any, show_content: bool, max_length: int) -> str:
+def _format_content(content: Any, preview_content: bool, max_length: int) -> str:
     """Format content with truncation."""
-    if not show_content:
+    if not preview_content:
         return ''
 
     content_str = str(content)
@@ -42,7 +42,7 @@ def _build_visualization(
     obj: Any,
     Text: type,
     *,
-    show_content: bool,
+    preview_content: bool,
     max_length: int,
     depth: int = 0,
     is_last: bool = True,
@@ -55,7 +55,7 @@ def _build_visualization(
     Args:
         obj: The object to visualize
         Text: The rich.text.Text class (passed in to avoid module-level import)
-        show_content: Whether to display values
+        preview_content: Whether to display values
         max_length: Maximum length for displayed values
         depth: Current depth in the tree
         is_last: Whether this is the last item at this level
@@ -90,7 +90,7 @@ def _build_visualization(
             _build_visualization(
                 v,
                 Text,
-                show_content=show_content,
+                preview_content=preview_content,
                 max_length=max_length,
                 depth=depth + 1,
                 is_last=i == len(items) - 1,
@@ -110,7 +110,7 @@ def _build_visualization(
             type_str = f'list of {" or ".join(types)} [{len(obj)} items]'
             add_node(label, type_str)
 
-            if show_content:
+            if preview_content:
                 next_prefix = prefix_chars + (
                     '    ' if is_last or depth == 0 else '│   '
                 )
@@ -118,7 +118,7 @@ def _build_visualization(
                     _build_visualization(
                         item,
                         Text,
-                        show_content=show_content,
+                        preview_content=preview_content,
                         max_length=max_length,
                         depth=depth + 1,
                         is_last=i == len(obj) - 1,
@@ -135,7 +135,7 @@ def _build_visualization(
             _build_visualization(
                 item,
                 Text,
-                show_content=show_content,
+                preview_content=preview_content,
                 max_length=max_length,
                 depth=depth + 1,
                 is_last=i == len(obj) - 1,
@@ -145,7 +145,7 @@ def _build_visualization(
             )
 
     else:
-        content = _format_content(obj, show_content, max_length)
+        content = _format_content(obj, preview_content, max_length)
         add_node(key, type(obj).__name__, content)
 
     return output
@@ -168,7 +168,7 @@ def _get_theme():
 def inspect_json(
     obj: Any,
     *,
-    show_content: bool = False,
+    preview_content: bool = False,
     max_length: int = 100,
     jupyter_mode: bool | None = None,
 ) -> Any:
@@ -179,7 +179,7 @@ def inspect_json(
 
     Args:
         obj: The JSON object to visualize
-        show_content: Whether to display the actual values (default: False)
+        preview_content: Whether to display the actual values (default: False)
         max_length: Maximum length for displayed values before truncation (default: 100)
         jupyter_mode: Force Jupyter mode on/off (default: auto-detect)
 
@@ -193,7 +193,7 @@ def inspect_json(
         ...     'contacts': {'email': 'john@example.com', 'phones': ['+1234567890']},
         ... }
         >>> _ = inspect_json(data)  # Shows structure only
-        >>> _ = inspect_json(data, show_content=True)  # Shows values
+        >>> _ = inspect_json(data, preview_content=True)  # Shows values
     """
     # Lazy import rich components only when function is called
     from rich.console import Console
@@ -201,7 +201,7 @@ def inspect_json(
 
     custom_theme = _get_theme()
     output = _build_visualization(
-        obj, Text, show_content=show_content, max_length=max_length
+        obj, Text, preview_content=preview_content, max_length=max_length
     )
 
     # Auto-detect Jupyter environment if not specified
