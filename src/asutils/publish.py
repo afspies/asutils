@@ -1,4 +1,5 @@
 """Publish asutils to PyPI."""
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -18,8 +19,40 @@ def get_package_root() -> Path:
     return Path(__file__).parent.parent.parent
 
 
-def run(cmd: list[str], cwd: Path | None = None) -> subprocess.CompletedProcess:
-    return subprocess.run(cmd, check=True, cwd=cwd)
+def run(
+    cmd: list[str], cwd: Path | None = None, env: dict | None = None
+) -> subprocess.CompletedProcess:
+    run_env = os.environ.copy()
+    if env:
+        run_env.update(env)
+    return subprocess.run(cmd, check=True, cwd=cwd, env=run_env)
+
+
+def get_pypi_token() -> str | None:
+    """Get PyPI API token from environment or shell config."""
+    # Check if already in environment
+    token = os.environ.get("PYPI_API_KEY")
+    if token:
+        return token
+
+    # Try sourcing zshrc/bashrc to get it
+    for rc_file in ["~/.zshrc", "~/.bashrc"]:
+        rc_path = Path(rc_file).expanduser()
+        if rc_path.exists():
+            try:
+                result = subprocess.run(
+                    f"source {rc_path} 2>/dev/null && echo $PYPI_API_KEY",
+                    shell=True,
+                    capture_output=True,
+                    text=True,
+                    executable="/bin/zsh" if "zsh" in rc_file else "/bin/bash",
+                )
+                token = result.stdout.strip()
+                if token:
+                    return token
+            except Exception:
+                continue
+    return None
 
 
 @app.command("bump")
@@ -100,7 +133,13 @@ def release(
 
     # Upload
     rprint("\n[bold]Uploading to PyPI...[/]")
-    run([sys.executable, "-m", "twine", "upload", "dist/*"], cwd=root)
+    token = get_pypi_token()
+    if not token:
+        rprint("[red]No PyPI token found. Set PYPI_API_KEY in environment or ~/.zshrc[/]")
+        raise typer.Exit(1)
+
+    twine_env = {"TWINE_USERNAME": "__token__", "TWINE_PASSWORD": token}
+    run([sys.executable, "-m", "twine", "upload", "dist/*"], cwd=root, env=twine_env)
     rprint(f"\n[bold green]✓ Published asutils v{__version__} to PyPI[/]")
 
     # Git tag
@@ -126,11 +165,18 @@ def test_pypi(
         shutil.rmtree(dist)
 
     run([sys.executable, "-m", "build"], cwd=root)
+
+    token = get_pypi_token()
+    if not token:
+        rprint("[red]No PyPI token found. Set PYPI_API_KEY in environment or ~/.zshrc[/]")
+        raise typer.Exit(1)
+
+    twine_env = {"TWINE_USERNAME": "__token__", "TWINE_PASSWORD": token}
     run([
         sys.executable, "-m", "twine", "upload",
         "--repository", "testpypi",
         "dist/*"
-    ], cwd=root)
+    ], cwd=root, env=twine_env)
     rprint("\n[bold green]✓ Published to TestPyPI[/]")
     rprint("Install with: pip install -i https://test.pypi.org/simple/ asutils")
 
