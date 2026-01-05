@@ -119,17 +119,17 @@ def show_skill(
     rprint(path.read_text())
 
 
-@app.command("install")
-def install_skill(
-    name: Annotated[str | None, typer.Argument(help="Skill name to install")] = None,
+@app.command("add")
+def add_skill(
+    name: Annotated[str | None, typer.Argument(help="Skill name to add")] = None,
     profile: Annotated[
-        str | None, typer.Option("--profile", "-p", help="Install skills from profile")
+        str | None, typer.Option("--profile", "-p", help="Add skills from profile")
     ] = None,
     force: Annotated[
         bool, typer.Option("--force", "-f", help="Overwrite existing skills")
     ] = False,
 ):
-    """Install a skill to Claude Code's skills directory."""
+    """Add a skill to Claude Code's skills directory."""
     if name is None and profile is None:
         rprint("[red]Provide either a skill name or --profile[/red]")
         raise typer.Exit(1)
@@ -163,20 +163,20 @@ def install_skill(
 
         source = bundled[skill_name]
         target.write_text(source.read_text())
-        rprint(f"[green]Installed '{skill_name}' to {target}[/green]")
+        rprint(f"[green]Added '{skill_name}' to {target}[/green]")
 
 
-@app.command("uninstall")
-def uninstall_skill(
-    name: Annotated[str | None, typer.Argument(help="Skill name to uninstall")] = None,
+@app.command("remove")
+def remove_skill(
+    name: Annotated[str | None, typer.Argument(help="Skill name to remove")] = None,
     profile: Annotated[
-        str | None, typer.Option("--profile", "-p", help="Uninstall skills from profile")
+        str | None, typer.Option("--profile", "-p", help="Remove skills from profile")
     ] = None,
     all_skills: Annotated[
-        bool, typer.Option("--all", help="Uninstall all skills")
+        bool, typer.Option("--all", help="Remove all skills")
     ] = False,
 ):
-    """Uninstall a skill from Claude Code's skills directory."""
+    """Remove a skill from Claude Code's skills directory."""
     if name is None and profile is None and not all_skills:
         rprint("[red]Provide a skill name, --profile, or --all[/red]")
         raise typer.Exit(1)
@@ -191,13 +191,13 @@ def uninstall_skill(
         skills_to_remove = [name] if name in installed else []
 
     if not skills_to_remove:
-        rprint("[yellow]No matching skills to uninstall[/yellow]")
+        rprint("[yellow]No matching skills to remove[/yellow]")
         return
 
     for skill_name in skills_to_remove:
         path = installed[skill_name]
         path.unlink()
-        rprint(f"[green]Uninstalled '{skill_name}' from {path}[/green]")
+        rprint(f"[green]Removed '{skill_name}' from {path}[/green]")
 
 
 @app.command("profiles")

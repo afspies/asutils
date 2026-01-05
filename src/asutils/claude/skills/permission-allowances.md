@@ -14,6 +14,7 @@ This skill grants default permissions for common operations. Claude should proce
 - Read, search, find, list files anywhere under `/home`, `/mnt/user-data`, `/tmp`, `/var/tmp`
 - Create, write, modify, delete files in `/home/claude`, `/mnt/user-data/outputs`, `/tmp`
 - Use `find`, `grep`, `rg`, `fd`, `locate`, `ls`, `tree`, `cat`, `head`, `tail`, `less` anywhere readable
+- File manipulation: `mkdir`, `touch`, `cp`, `mv`, `rm`, `ln`, `chmod`, `chown`
 - Check file sizes, permissions, timestamps with `stat`, `du`, `df`, `wc`
 - Compress/decompress with `tar`, `gzip`, `zip`, `unzip`, `7z`
 
@@ -27,6 +28,7 @@ This skill grants default permissions for common operations. Claude should proce
 - Run linters and formatters: `black`, `ruff`, `prettier`, `eslint`, `mypy`, `pylint`
 - Use version control: `git` (all subcommands including clone, pull, push if network allows)
 - Run tests: `pytest`, `jest`, `mocha`, `cargo test`
+- Task tracking: `bd` / beads (all subcommands: init, create, update, close, list, show, sync, etc.)
 
 ## Container & Virtualization
 
