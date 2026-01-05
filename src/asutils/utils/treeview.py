@@ -1,9 +1,9 @@
-"""JSON structure inspection utility with rich visualization.
+"""Tree view utility for nested data structures.
 
-This module provides utilities for visualizing JSON/dict structures with
-tree-style formatting and syntax highlighting.
+This module provides utilities for visualizing nested dicts, lists, and other
+data structures with tree-style formatting and syntax highlighting.
 
-Note: Rich imports are deferred until the inspect function is called,
+Note: Rich imports are deferred until the treeview function is called,
 so importing this module won't affect print behavior elsewhere.
 """
 
@@ -165,7 +165,7 @@ def _get_theme():
     )
 
 
-def inspect_json(
+def treeview(
     obj: Any,
     *,
     preview_content: bool = False,
@@ -173,12 +173,12 @@ def inspect_json(
     jupyter_mode: bool | None = None,
 ) -> Any:
     """
-    Visualize JSON structure with tree-style indicators and colored output.
+    Visualize nested data structure with tree-style indicators and colored output.
 
     Automatically detects Jupyter environment and adjusts output accordingly.
 
     Args:
-        obj: The JSON object to visualize
+        obj: The object to visualize (dict, list, or nested structure)
         preview_content: Whether to display the actual values (default: False)
         max_length: Maximum length for displayed values before truncation (default: 100)
         jupyter_mode: Force Jupyter mode on/off (default: auto-detect)
@@ -192,8 +192,8 @@ def inspect_json(
         ...     'name': 'John Doe',
         ...     'contacts': {'email': 'john@example.com', 'phones': ['+1234567890']},
         ... }
-        >>> _ = inspect_json(data)  # Shows structure only
-        >>> _ = inspect_json(data, preview_content=True)  # Shows values
+        >>> _ = treeview(data)  # Shows structure only
+        >>> _ = treeview(data, preview_content=True)  # Shows values
     """
     # Lazy import rich components only when function is called
     from rich.console import Console

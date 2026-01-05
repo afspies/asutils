@@ -1,5 +1,5 @@
 """General-purpose utilities."""
 
-from asutils.utils.json_inspect import inspect_json
+from asutils.utils.treeview import treeview
 
-__all__ = ["inspect_json"]
+__all__ = ["treeview"]
