@@ -12,6 +12,26 @@ bd close <id>         # Complete work
 bd sync               # Sync with git
 ```
 
+## asutils Commands
+
+This project provides CLI utilities via `asutils` (or standalone `as-*` commands):
+
+```bash
+# Development
+asutils repo init [name]       # Scaffold new Python project
+asutils git sync               # Quick add, commit, push
+asutils publish bump [patch|minor|major]  # Bump version
+asutils publish release        # Test, build, upload to PyPI, tag
+
+# Claude Code skills
+asutils claude skill list      # List bundled & installed skills
+asutils claude skill add <name>           # Add skill to ~/.claude/skills/
+asutils claude skill add --profile=all    # Add all bundled skills
+asutils claude skill remove <name>        # Remove a skill
+```
+
+Run with `uv run asutils <command>` during development.
+
 ## Landing the Plane (Session Completion)
 
 **When ending a work session**, you MUST complete ALL steps below. Work is NOT complete until `git push` succeeds.
