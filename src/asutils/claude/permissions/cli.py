@@ -53,8 +53,14 @@ def is_hook_installed() -> bool:
         settings = json.loads(CLAUDE_SETTINGS.read_text())
         hooks = settings.get("hooks", {})
         permission_hooks = hooks.get("PermissionRequest", [])
-        for hook in permission_hooks:
-            if HOOK_FILENAME in hook.get("command", ""):
+        for hook_entry in permission_hooks:
+            # New format: {"matcher": {...}, "hooks": [...]}
+            if "hooks" in hook_entry:
+                for h in hook_entry.get("hooks", []):
+                    if HOOK_FILENAME in h.get("command", ""):
+                        return True
+            # Old format: {"type": "command", "command": "..."}
+            elif HOOK_FILENAME in hook_entry.get("command", ""):
                 return True
     except (json.JSONDecodeError, KeyError):
         pass
@@ -214,11 +220,18 @@ def install_profiles(
     if "PermissionRequest" not in settings["hooks"]:
         settings["hooks"]["PermissionRequest"] = []
 
-    # Check if hook already configured
-    hook_exists = any(
-        HOOK_FILENAME in h.get("command", "")
-        for h in settings["hooks"]["PermissionRequest"]
-    )
+    # Check if hook already configured (new format with matcher/hooks)
+    def has_our_hook(hook_entry):
+        # New format: {"matcher": {...}, "hooks": [...]}
+        if "hooks" in hook_entry:
+            return any(
+                HOOK_FILENAME in h.get("command", "")
+                for h in hook_entry.get("hooks", [])
+            )
+        # Old format: {"type": "command", "command": "..."}
+        return HOOK_FILENAME in hook_entry.get("command", "")
+
+    hook_exists = any(has_our_hook(h) for h in settings["hooks"]["PermissionRequest"])
 
     if hook_exists and not force:
         console.print("  [yellow]Hook already configured in settings.json[/yellow]")
@@ -228,12 +241,13 @@ def install_profiles(
             settings["hooks"]["PermissionRequest"] = [
                 h
                 for h in settings["hooks"]["PermissionRequest"]
-                if HOOK_FILENAME not in h.get("command", "")
+                if not has_our_hook(h)
             ]
-        # Add new hook
-        settings["hooks"]["PermissionRequest"].append(
-            {"type": "command", "command": hook_command}
-        )
+        # Add new hook using new format with matcher
+        settings["hooks"]["PermissionRequest"].append({
+            "matcher": {},  # Empty matcher matches all tools
+            "hooks": [{"type": "command", "command": hook_command}]
+        })
         CLAUDE_SETTINGS.write_text(json.dumps(settings, indent=2) + "\n")
         console.print("  [green]Added hook to settings.json[/green]")
 
@@ -369,11 +383,22 @@ def uninstall_profiles(
         try:
             settings = json.loads(CLAUDE_SETTINGS.read_text())
             if "hooks" in settings and "PermissionRequest" in settings["hooks"]:
+
+                def has_our_hook(hook_entry):
+                    # New format: {"matcher": {...}, "hooks": [...]}
+                    if "hooks" in hook_entry:
+                        return any(
+                            HOOK_FILENAME in h.get("command", "")
+                            for h in hook_entry.get("hooks", [])
+                        )
+                    # Old format: {"type": "command", "command": "..."}
+                    return HOOK_FILENAME in hook_entry.get("command", "")
+
                 original_len = len(settings["hooks"]["PermissionRequest"])
                 settings["hooks"]["PermissionRequest"] = [
                     h
                     for h in settings["hooks"]["PermissionRequest"]
-                    if HOOK_FILENAME not in h.get("command", "")
+                    if not has_our_hook(h)
                 ]
                 if len(settings["hooks"]["PermissionRequest"]) < original_len:
                     CLAUDE_SETTINGS.write_text(json.dumps(settings, indent=2) + "\n")
