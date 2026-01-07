@@ -1,0 +1,81 @@
+# Development profile - permissive for active development
+name: dev
+description: Permissive profile for active development
+
+# Rules evaluated in order - first match wins
+rules:
+  # Always deny dangerous operations (even in dev mode)
+  - tool: Bash
+    action: deny
+    match:
+      command:
+        - "rm -rf /*"
+        - "rm -rf /"
+        - "sudo rm -rf *"
+        - "> /dev/sd*"
+        - "dd if=* of=/dev/*"
+        - "mkfs.*"
+
+  # Allow common dev commands
+  - tool: Bash
+    action: allow
+    match:
+      command:
+        - "npm *"
+        - "yarn *"
+        - "pnpm *"
+        - "git *"
+        - "make *"
+        - "cargo *"
+        - "python *"
+        - "python3 *"
+        - "node *"
+        - "go *"
+        - "pytest *"
+        - "jest *"
+        - "uv *"
+        - "pip *"
+        - "pip3 *"
+        - "ruff *"
+        - "black *"
+        - "mypy *"
+        - "docker *"
+        - "docker-compose *"
+        - "bd *"
+
+  # Allow filesystem inspection
+  - tool: Bash
+    action: allow
+    match:
+      command:
+        - "ls *"
+        - "find *"
+        - "du *"
+        - "df *"
+        - "tree *"
+        - "wc *"
+        - "stat *"
+        - "cat *"
+        - "head *"
+        - "tail *"
+        - "less *"
+        - "file *"
+        - "which *"
+        - "whereis *"
+        - "type *"
+
+  # Allow file operations in working directory
+  - tool: Write
+    action: allow
+    match:
+      path:
+        - "./**"
+
+  - tool: Edit
+    action: allow
+    match:
+      path:
+        - "./**"
+
+# Unmatched requests fall through to Claude's normal prompting
+default: passthrough

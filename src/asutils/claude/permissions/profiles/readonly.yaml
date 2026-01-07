@@ -1,0 +1,54 @@
+# Read-only profile - only allow read operations
+name: readonly
+description: Only allow read operations
+
+rules:
+  # Deny all writes
+  - tool: Write
+    action: deny
+    match:
+      path: ["*"]
+
+  - tool: Edit
+    action: deny
+    match:
+      path: ["*"]
+
+  # Allow read-only bash commands
+  - tool: Bash
+    action: allow
+    match:
+      command:
+        - "ls *"
+        - "cat *"
+        - "head *"
+        - "tail *"
+        - "find *"
+        - "grep *"
+        - "rg *"
+        - "tree *"
+        - "file *"
+        - "stat *"
+        - "wc *"
+        - "du *"
+        - "df *"
+        - "which *"
+        - "whereis *"
+        - "type *"
+        - "git status*"
+        - "git log*"
+        - "git diff*"
+        - "git show*"
+        - "git branch*"
+        - "bd list*"
+        - "bd show*"
+        - "bd ready*"
+        - "bd stats*"
+
+  # Deny other bash commands
+  - tool: Bash
+    action: deny
+    match:
+      command: ["*"]
+
+default: passthrough

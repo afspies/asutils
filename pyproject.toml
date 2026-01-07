@@ -1,6 +1,6 @@
 [project]
 name = "asutils"
-version = "0.2.2"
+version = "0.2.3"
 description = "Personal CLI utilities"
 readme = "README.md"
 license = { text = "MIT" }
@@ -19,6 +19,7 @@ classifiers = [
 dependencies = [
     "typer>=0.9.0",
     "rich>=13.0.0",
+    "pyyaml>=6.0",
 ]
 
 [project.optional-dependencies]
@@ -53,6 +54,7 @@ packages = ["src/asutils"]
 include = [
     "src/asutils/**/*.py",
     "src/asutils/**/*.md",
+    "src/asutils/**/*.yaml",
 ]
 
 [tool.ruff]

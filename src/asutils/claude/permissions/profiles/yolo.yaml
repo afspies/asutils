@@ -1,0 +1,40 @@
+# YOLO profile - allow everything except catastrophic operations
+name: yolo
+description: Allow everything except catastrophic operations
+
+rules:
+  # Still deny truly dangerous stuff
+  - tool: Bash
+    action: deny
+    match:
+      command:
+        - "rm -rf /*"
+        - "rm -rf /"
+        - "sudo rm -rf *"
+        - "> /dev/sd*"
+        - "dd if=* of=/dev/*"
+        - "mkfs.*"
+
+  # Allow everything else
+  - tool: Bash
+    action: allow
+    match:
+      command: ["*"]
+
+  - tool: Write
+    action: allow
+    match:
+      path: ["*"]
+
+  - tool: Edit
+    action: allow
+    match:
+      path: ["*"]
+
+  - tool: WebFetch
+    action: allow
+
+  - tool: WebSearch
+    action: allow
+
+default: allow

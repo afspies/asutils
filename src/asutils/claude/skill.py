@@ -16,9 +16,9 @@ BUNDLED_SKILLS_DIR = Path(__file__).parent / "skills"
 # Claude Code skills directory
 CLAUDE_SKILLS_DIR = Path.home() / ".claude" / "skills"
 
-# Predefined profiles
-PROFILES: dict[str, list[str]] = {
-    "minimal": ["permission-allowances"],
+# Predefined bundles
+BUNDLES: dict[str, list[str]] = {
+    "minimal": [],  # Empty for now - permission-allowances removed
     "all": [],  # Populated dynamically with all available skills
 }
 
@@ -41,11 +41,11 @@ def get_installed_skills() -> dict[str, Path]:
     return skills
 
 
-def get_profile_skills(profile: str) -> list[str]:
-    """Get list of skill names for a profile."""
-    if profile == "all":
+def get_bundle_skills(bundle: str) -> list[str]:
+    """Get list of skill names for a bundle."""
+    if bundle == "all":
         return list(get_bundled_skills().keys())
-    return PROFILES.get(profile, [])
+    return BUNDLES.get(bundle, [])
 
 
 @app.command("list")
@@ -122,27 +122,27 @@ def show_skill(
 @app.command("add")
 def add_skill(
     name: Annotated[str | None, typer.Argument(help="Skill name to add")] = None,
-    profile: Annotated[
-        str | None, typer.Option("--profile", "-p", help="Add skills from profile")
+    bundle: Annotated[
+        str | None, typer.Option("--bundle", "-b", help="Add skills from bundle")
     ] = None,
     force: Annotated[
         bool, typer.Option("--force", "-f", help="Overwrite existing skills")
     ] = False,
 ):
     """Add a skill to Claude Code's skills directory."""
-    if name is None and profile is None:
-        rprint("[red]Provide either a skill name or --profile[/red]")
+    if name is None and bundle is None:
+        rprint("[red]Provide either a skill name or --bundle[/red]")
         raise typer.Exit(1)
 
     bundled = get_bundled_skills()
     installed = get_installed_skills()
 
     # Determine which skills to install
-    if profile:
-        skills_to_install = get_profile_skills(profile)
+    if bundle:
+        skills_to_install = get_bundle_skills(bundle)
         if not skills_to_install:
-            rprint(f"[red]Unknown profile: {profile}[/red]")
-            rprint(f"[dim]Available profiles: {', '.join(PROFILES.keys())}[/dim]")
+            rprint(f"[red]Unknown or empty bundle: {bundle}[/red]")
+            rprint(f"[dim]Available bundles: {', '.join(BUNDLES.keys())}[/dim]")
             raise typer.Exit(1)
     else:
         skills_to_install = [name]
@@ -169,24 +169,24 @@ def add_skill(
 @app.command("remove")
 def remove_skill(
     name: Annotated[str | None, typer.Argument(help="Skill name to remove")] = None,
-    profile: Annotated[
-        str | None, typer.Option("--profile", "-p", help="Remove skills from profile")
+    bundle: Annotated[
+        str | None, typer.Option("--bundle", "-b", help="Remove skills from bundle")
     ] = None,
     all_skills: Annotated[
         bool, typer.Option("--all", help="Remove all skills")
     ] = False,
 ):
     """Remove a skill from Claude Code's skills directory."""
-    if name is None and profile is None and not all_skills:
-        rprint("[red]Provide a skill name, --profile, or --all[/red]")
+    if name is None and bundle is None and not all_skills:
+        rprint("[red]Provide a skill name, --bundle, or --all[/red]")
         raise typer.Exit(1)
 
     installed = get_installed_skills()
 
     if all_skills:
         skills_to_remove = list(installed.keys())
-    elif profile:
-        skills_to_remove = [s for s in get_profile_skills(profile) if s in installed]
+    elif bundle:
+        skills_to_remove = [s for s in get_bundle_skills(bundle) if s in installed]
     else:
         skills_to_remove = [name] if name in installed else []
 
@@ -200,17 +200,17 @@ def remove_skill(
         rprint(f"[green]Removed '{skill_name}' from {path}[/green]")
 
 
-@app.command("profiles")
-def list_profiles():
-    """List available skill profiles."""
+@app.command("bundles")
+def list_bundles():
+    """List available skill bundles."""
     console = Console()
-    table = Table(title="Skill Profiles")
-    table.add_column("Profile", style="cyan")
+    table = Table(title="Skill Bundles")
+    table.add_column("Bundle", style="cyan")
     table.add_column("Skills")
 
-    for profile_name in PROFILES:
-        skills = get_profile_skills(profile_name)
-        table.add_row(profile_name, ", ".join(skills) or "(all bundled)")
+    for bundle_name in BUNDLES:
+        skills = get_bundle_skills(bundle_name)
+        table.add_row(bundle_name, ", ".join(skills) or "(all bundled)")
 
     console.print(table)
 

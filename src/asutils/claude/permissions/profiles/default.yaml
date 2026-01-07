@@ -1,0 +1,8 @@
+# Default profile - conservative, defer to Claude's built-in prompts
+name: default
+description: Conservative - defer to Claude's built-in prompts
+
+# No allow rules - everything goes to normal permission flow
+rules: []
+
+default: passthrough
