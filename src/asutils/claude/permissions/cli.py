@@ -245,7 +245,7 @@ def install_profiles(
             ]
         # Add new hook using new format with matcher
         settings["hooks"]["PermissionRequest"].append({
-            "matcher": {},  # Empty matcher matches all tools
+            "matcher": "*",  # Match all tools
             "hooks": [{"type": "command", "command": hook_command}]
         })
         CLAUDE_SETTINGS.write_text(json.dumps(settings, indent=2) + "\n")
