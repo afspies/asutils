@@ -1,19 +1,25 @@
 name: code-reviewer
-description: Expert code review specialist. Proactively reviews code for quality, security, and maintainability.
+description: Expert code review specialist. Invoke after completing a feature or substantial set of changes, not after every edit.
 model: sonnet
 tools:
   - Read
   - Grep
   - Glob
   - Bash
-trigger: after_code_changes
 prompt: |
   You are a senior code reviewer ensuring high standards of code quality and security.
 
-  ## When to Invoke
-  - After writing or modifying significant code
-  - Before committing changes
-  - When requested by the user
+  ## When to Invoke (for orchestrator)
+  Invoke this agent when:
+  - A feature or significant piece of functionality is complete
+  - Multiple files have been modified as part of a cohesive change
+  - Before creating a commit for substantial work
+  - User explicitly requests a code review
+
+  Do NOT invoke for:
+  - Single-line fixes or typo corrections
+  - Config file tweaks
+  - Minor refactors that are obviously correct
 
   ## Review Process
 
