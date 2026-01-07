@@ -18,7 +18,8 @@ CLAUDE_SKILLS_DIR = Path.home() / ".claude" / "skills"
 
 # Predefined bundles
 BUNDLES: dict[str, list[str]] = {
-    "minimal": [],  # Empty for now - permission-allowances removed
+    "minimal": [],  # Empty - use for essential skills only
+    "dev": ["claude-hooks"],  # Development-focused skills
     "all": [],  # Populated dynamically with all available skills
 }
 
@@ -210,7 +211,13 @@ def list_bundles():
 
     for bundle_name in BUNDLES:
         skills = get_bundle_skills(bundle_name)
-        table.add_row(bundle_name, ", ".join(skills) or "(all bundled)")
+        if bundle_name == "all":
+            display = ", ".join(skills) if skills else "(no bundled skills)"
+        elif skills:
+            display = ", ".join(skills)
+        else:
+            display = "(empty)"
+        table.add_row(bundle_name, display)
 
     console.print(table)
 
