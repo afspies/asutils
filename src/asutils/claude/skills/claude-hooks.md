@@ -109,7 +109,7 @@ For `PermissionRequest` hooks to auto-allow/deny:
 }
 ```
 
-Or to deny:
+Or to deny with a message:
 
 ```json
 {
@@ -122,6 +122,21 @@ Or to deny:
   }
 }
 ```
+
+Or to passthrough (let Claude's normal prompting handle it):
+
+```json
+{
+  "hookSpecificOutput": {
+    "hookEventName": "PermissionRequest",
+    "decision": {
+      "behavior": "passthrough"
+    }
+  }
+}
+```
+
+**IMPORTANT**: The hook reads `tool_name` and `tool_input` from stdin JSON (not `tool` or `input`).
 
 ## Example: Permission Router Hook
 

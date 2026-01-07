@@ -86,8 +86,9 @@ def evaluate(profile: dict, tool: str, input_data: dict) -> str:
 def main():
     try:
         request = json.load(sys.stdin)
-        tool = request.get("tool", "")
-        input_data = request.get("input", {})
+        # PermissionRequest uses tool_name and tool_input fields
+        tool = request.get("tool_name", "")
+        input_data = request.get("tool_input", {})
 
         profile_name = os.environ.get("CLAUDE_PROFILE") or get_default_profile()
         profile = load_profile(profile_name)
@@ -96,12 +97,29 @@ def main():
 
         log(f"[{profile_name}] {tool}: {input_data} -> {decision}")
 
-        print(json.dumps({"decision": {"behavior": decision}}))
+        # Output format for PermissionRequest hooks
+        output = {
+            "hookSpecificOutput": {
+                "hookEventName": "PermissionRequest",
+                "decision": {
+                    "behavior": decision
+                }
+            }
+        }
+        print(json.dumps(output))
 
     except Exception as e:
         log(f"ERROR: {e}")
         # On error, passthrough to normal behavior
-        print(json.dumps({"decision": {"behavior": "passthrough"}}))
+        output = {
+            "hookSpecificOutput": {
+                "hookEventName": "PermissionRequest",
+                "decision": {
+                    "behavior": "passthrough"
+                }
+            }
+        }
+        print(json.dumps(output))
 
 
 if __name__ == "__main__":
