@@ -28,9 +28,9 @@ def setup(
         bool, typer.Option("--force", "-f", help="Overwrite existing files")
     ] = False,
 ):
-    """One-command setup for Claude Code with permissions and skills.
+    """One-command setup for Claude Code with permissions, skills, and agents.
 
-    Installs permission profiles, sets a default profile, and installs skills.
+    Installs permission profiles, sets a default profile, installs skills, and adds agents.
     """
     console = Console()
 
@@ -51,11 +51,17 @@ def setup(
     skill.add_skill(name=None, bundle=skill_bundle, force=force)
     console.print()
 
+    # Step 4: Install agents
+    console.print("[bold cyan]Step 4:[/bold cyan] Installing agents...")
+    agents.add_agent(name=None, all_agents=True, force=force)
+    console.print()
+
     console.print("[bold green]Setup complete![/bold green]")
     rprint("\n[dim]Claude Code is now configured with:[/dim]")
     rprint("  - Permission profiles installed")
     rprint(f"  - Default profile: [cyan]{profile}[/cyan]")
     rprint(f"  - Skills: [cyan]{skill_bundle}[/cyan] bundle")
+    rprint("  - All bundled agents installed")
     rprint("\n[dim]Run 'claude' to start using it![/dim]")
 
 
