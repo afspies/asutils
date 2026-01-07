@@ -19,6 +19,7 @@ CLAUDE_SKILLS_DIR = Path.home() / ".claude" / "skills"
 # Predefined bundles
 BUNDLES: dict[str, list[str]] = {
     "minimal": [],  # Empty - use for essential skills only
+    "default": [],  # All bundled skills - populated dynamically (same as "all")
     "dev": ["claude-hooks"],  # Development-focused skills
     "all": [],  # Populated dynamically with all available skills
 }
@@ -44,7 +45,7 @@ def get_installed_skills() -> dict[str, Path]:
 
 def get_bundle_skills(bundle: str) -> list[str]:
     """Get list of skill names for a bundle."""
-    if bundle == "all":
+    if bundle in ("all", "default"):
         return list(get_bundled_skills().keys())
     return BUNDLES.get(bundle, [])
 
