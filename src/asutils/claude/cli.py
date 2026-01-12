@@ -1,5 +1,6 @@
 """Claude Code utilities CLI."""
 
+import subprocess
 from typing import Annotated
 
 import typer
@@ -56,12 +57,29 @@ def setup(
     agents.add_agent(name=None, all_agents=True, force=force)
     console.print()
 
+    # Step 5: Install Anthropic plugins
+    console.print("[bold cyan]Step 5:[/bold cyan] Installing Anthropic plugins...")
+    try:
+        result = subprocess.run(
+            ["claude", "plugin", "install", "code-simplifier"],
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        console.print("  [green]✓[/green] code-simplifier plugin installed")
+    except subprocess.CalledProcessError as e:
+        console.print(f"  [yellow]⚠[/yellow] Failed to install code-simplifier: {e.stderr.strip()}")
+    except FileNotFoundError:
+        console.print("  [yellow]⚠[/yellow] 'claude' CLI not found - skipping plugin installation")
+    console.print()
+
     console.print("[bold green]Setup complete![/bold green]")
     rprint("\n[dim]Claude Code is now configured with:[/dim]")
     rprint("  - Permission profiles installed")
     rprint(f"  - Default profile: [cyan]{profile}[/cyan]")
     rprint(f"  - Skills: [cyan]{skill_bundle}[/cyan] bundle")
     rprint("  - All bundled agents installed")
+    rprint("  - Anthropic plugins: [cyan]code-simplifier[/cyan]")
     rprint("\n[dim]Run 'claude' to start using it![/dim]")
 
 
