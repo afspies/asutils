@@ -10,11 +10,13 @@ from rich.console import Console
 from asutils.claude import skill
 from asutils.claude.agents import cli as agents
 from asutils.claude.permissions import cli as permission
+from asutils.claude.tts import cli as tts
 
 app = typer.Typer(name="claude", help="Claude Code utilities")
 app.add_typer(skill.app, name="skill")
 app.add_typer(permission.app, name="permission")
 app.add_typer(agents.app, name="agent")
+app.add_typer(tts.app, name="tts")
 
 
 @app.command("setup")
