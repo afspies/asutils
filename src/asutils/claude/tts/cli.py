@@ -13,18 +13,19 @@ from rich.table import Table
 
 app = typer.Typer(help="Text-to-speech for Claude Code responses")
 
-# Bundled hook scripts (alongside this module)
+# Bundled files (alongside this module)
 BUNDLED_STOP_HOOK = Path(__file__).parent / "hook.py"
-BUNDLED_SESSION_HOOK = Path(__file__).parent / "session_hook.py"
+BUNDLED_COMMAND = Path(__file__).parent / "commands" / "tts.md"
 
 # Claude Code directories
 CLAUDE_DIR = Path.home() / ".claude"
 CLAUDE_HOOKS_DIR = CLAUDE_DIR / "hooks"
+CLAUDE_COMMANDS_DIR = CLAUDE_DIR / "commands"
 CLAUDE_SETTINGS = CLAUDE_DIR / "settings.json"
 TTS_CONFIG_FILE = CLAUDE_DIR / "tts-config.yaml"
 
 STOP_HOOK_FILENAME = "tts-hook.py"
-SESSION_HOOK_FILENAME = "tts-session-hook.py"
+COMMAND_FILENAME = "tts.md"
 
 
 def load_config() -> dict:
@@ -79,24 +80,9 @@ def is_hook_installed() -> bool:
     return False
 
 
-def is_session_hook_installed() -> bool:
-    """Check if the TTS session hook is installed in settings.json."""
-    if not CLAUDE_SETTINGS.exists():
-        return False
-    try:
-        settings = json.loads(CLAUDE_SETTINGS.read_text())
-        hooks = settings.get("hooks", {})
-        prompt_hooks = hooks.get("UserPromptSubmit", [])
-        for hook_entry in prompt_hooks:
-            if "hooks" in hook_entry:
-                for h in hook_entry.get("hooks", []):
-                    if SESSION_HOOK_FILENAME in h.get("command", ""):
-                        return True
-            elif SESSION_HOOK_FILENAME in hook_entry.get("command", ""):
-                return True
-    except (json.JSONDecodeError, KeyError):
-        pass
-    return False
+def is_command_installed() -> bool:
+    """Check if the /tts command is installed."""
+    return (CLAUDE_COMMANDS_DIR / COMMAND_FILENAME).exists()
 
 
 @app.command("install")
@@ -105,11 +91,12 @@ def install_hook(
         bool, typer.Option("--force", "-f", help="Overwrite existing files")
     ] = False,
 ):
-    """Install TTS hooks to ~/.claude/."""
+    """Install TTS hook and /tts command to ~/.claude/."""
     console = Console()
 
     # Create directories
     CLAUDE_HOOKS_DIR.mkdir(parents=True, exist_ok=True)
+    CLAUDE_COMMANDS_DIR.mkdir(parents=True, exist_ok=True)
 
     # Read existing settings
     if CLAUDE_SETTINGS.exists():
@@ -159,47 +146,17 @@ def install_hook(
         )
         console.print("  [green]Configured Stop hook[/green]")
 
-    # Install UserPromptSubmit hook (enables /tts toggle)
-    console.print("\n[bold]Installing TTS session hook...[/bold]")
-    session_hook_target = CLAUDE_HOOKS_DIR / SESSION_HOOK_FILENAME
-    if session_hook_target.exists() and not force:
-        console.print(
-            f"  [yellow]{SESSION_HOOK_FILENAME} exists (use --force to overwrite)[/yellow]"
-        )
-    else:
-        session_hook_target.write_text(BUNDLED_SESSION_HOOK.read_text())
-        session_hook_target.chmod(0o755)
-        console.print(f"  [green]Installed {session_hook_target}[/green]")
-
-    # Configure UserPromptSubmit hook in settings.json
-    if "UserPromptSubmit" not in settings["hooks"]:
-        settings["hooks"]["UserPromptSubmit"] = []
-
-    def has_session_hook(hook_entry):
-        if "hooks" in hook_entry:
-            return any(
-                SESSION_HOOK_FILENAME in h.get("command", "")
-                for h in hook_entry.get("hooks", [])
-            )
-        return SESSION_HOOK_FILENAME in hook_entry.get("command", "")
-
-    session_hook_exists = any(has_session_hook(h) for h in settings["hooks"]["UserPromptSubmit"])
-
-    if session_hook_exists and not force:
-        console.print("  [yellow]Session hook already in settings.json[/yellow]")
-    else:
-        if force:
-            settings["hooks"]["UserPromptSubmit"] = [
-                h for h in settings["hooks"]["UserPromptSubmit"] if not has_session_hook(h)
-            ]
-        session_hook_command = f"python3 {session_hook_target}"
-        settings["hooks"]["UserPromptSubmit"].append(
-            {"hooks": [{"type": "command", "command": session_hook_command}]}
-        )
-        console.print("  [green]Configured UserPromptSubmit hook[/green]")
-
     # Save settings
     CLAUDE_SETTINGS.write_text(json.dumps(settings, indent=2) + "\n")
+
+    # Install /tts command
+    console.print("\n[bold]Installing /tts command...[/bold]")
+    command_target = CLAUDE_COMMANDS_DIR / COMMAND_FILENAME
+    if command_target.exists() and not force:
+        console.print(f"  [yellow]{COMMAND_FILENAME} exists (use --force to overwrite)[/yellow]")
+    else:
+        command_target.write_text(BUNDLED_COMMAND.read_text())
+        console.print(f"  [green]Installed {command_target}[/green]")
 
     # Create default config if not exists
     if not TTS_CONFIG_FILE.exists():
@@ -216,16 +173,14 @@ def install_hook(
 
 @app.command("uninstall")
 def uninstall_hook():
-    """Remove TTS hooks from ~/.claude/."""
+    """Remove TTS hook and command from ~/.claude/."""
     console = Console()
 
-    # Remove from settings.json
+    # Remove Stop hook from settings.json
     if CLAUDE_SETTINGS.exists():
         try:
             settings = json.loads(CLAUDE_SETTINGS.read_text())
-            changed = False
 
-            # Remove Stop hook
             if "hooks" in settings and "Stop" in settings["hooks"]:
 
                 def has_stop_hook(hook_entry):
@@ -241,46 +196,25 @@ def uninstall_hook():
                     h for h in settings["hooks"]["Stop"] if not has_stop_hook(h)
                 ]
                 if len(settings["hooks"]["Stop"]) < original_len:
+                    CLAUDE_SETTINGS.write_text(json.dumps(settings, indent=2) + "\n")
                     console.print("[green]Removed Stop hook from settings.json[/green]")
-                    changed = True
-
-            # Remove UserPromptSubmit hook
-            if "hooks" in settings and "UserPromptSubmit" in settings["hooks"]:
-
-                def has_session_hook(hook_entry):
-                    if "hooks" in hook_entry:
-                        return any(
-                            SESSION_HOOK_FILENAME in h.get("command", "")
-                            for h in hook_entry.get("hooks", [])
-                        )
-                    return SESSION_HOOK_FILENAME in hook_entry.get("command", "")
-
-                original_len = len(settings["hooks"]["UserPromptSubmit"])
-                settings["hooks"]["UserPromptSubmit"] = [
-                    h for h in settings["hooks"]["UserPromptSubmit"] if not has_session_hook(h)
-                ]
-                if len(settings["hooks"]["UserPromptSubmit"]) < original_len:
-                    console.print("[green]Removed session hook from settings.json[/green]")
-                    changed = True
-
-            if changed:
-                CLAUDE_SETTINGS.write_text(json.dumps(settings, indent=2) + "\n")
-            else:
-                console.print("[dim]Hooks not found in settings.json[/dim]")
+                else:
+                    console.print("[dim]Stop hook not found in settings.json[/dim]")
 
         except json.JSONDecodeError:
             console.print("[yellow]Could not parse settings.json[/yellow]")
 
-    # Remove hook files
+    # Remove hook file
     stop_hook_path = CLAUDE_HOOKS_DIR / STOP_HOOK_FILENAME
     if stop_hook_path.exists():
         stop_hook_path.unlink()
         console.print(f"[green]Removed {stop_hook_path}[/green]")
 
-    session_hook_path = CLAUDE_HOOKS_DIR / SESSION_HOOK_FILENAME
-    if session_hook_path.exists():
-        session_hook_path.unlink()
-        console.print(f"[green]Removed {session_hook_path}[/green]")
+    # Remove command file
+    command_path = CLAUDE_COMMANDS_DIR / COMMAND_FILENAME
+    if command_path.exists():
+        command_path.unlink()
+        console.print(f"[green]Removed {command_path}[/green]")
 
     console.print("\n[bold]Uninstall complete[/bold]")
 
@@ -327,17 +261,11 @@ def show_status():
     console = Console()
 
     stop_hook_installed = is_hook_installed()
-    session_hook_installed = is_session_hook_installed()
+    command_installed = is_command_installed()
     stop_hook_file_exists = (CLAUDE_HOOKS_DIR / STOP_HOOK_FILENAME).exists()
-    session_hook_file_exists = (CLAUDE_HOOKS_DIR / SESSION_HOOK_FILENAME).exists()
     config = load_config()
 
-    fully_installed = (
-        stop_hook_installed
-        and session_hook_installed
-        and stop_hook_file_exists
-        and session_hook_file_exists
-    )
+    fully_installed = stop_hook_installed and stop_hook_file_exists and command_installed
 
     # Overall status
     if fully_installed:
@@ -368,29 +296,24 @@ def show_status():
     else:
         table.add_row("Stop hook", "[red]Missing[/red]", "Run: asutils claude tts install")
 
-    # Session hook file
-    if session_hook_file_exists:
+    # /tts command
+    if command_installed:
         table.add_row(
-            "Session hook",
+            "/tts command",
             "[green]Installed[/green]",
-            str(CLAUDE_HOOKS_DIR / SESSION_HOOK_FILENAME),
+            str(CLAUDE_COMMANDS_DIR / COMMAND_FILENAME),
         )
     else:
-        table.add_row("Session hook", "[red]Missing[/red]", "Run: asutils claude tts install")
+        table.add_row("/tts command", "[red]Missing[/red]", "Run: asutils claude tts install")
 
     # Settings config
-    if stop_hook_installed and session_hook_installed:
-        table.add_row("Settings.json", "[green]Configured[/green]", "Both hooks registered")
+    if stop_hook_installed:
+        table.add_row("Settings.json", "[green]Configured[/green]", "Stop hook registered")
     else:
-        missing = []
-        if not stop_hook_installed:
-            missing.append("Stop")
-        if not session_hook_installed:
-            missing.append("UserPromptSubmit")
         table.add_row(
             "Settings.json",
-            "[yellow]Partial[/yellow]",
-            f"Missing: {', '.join(missing)}",
+            "[red]Not configured[/red]",
+            "Run: asutils claude tts install",
         )
 
     # Always enabled

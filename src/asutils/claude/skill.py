@@ -20,7 +20,7 @@ CLAUDE_SKILLS_DIR = Path.home() / ".claude" / "skills"
 BUNDLES: dict[str, list[str]] = {
     "minimal": [],  # Empty - use for essential skills only
     "default": [],  # All bundled skills - populated dynamically (same as "all")
-    "dev": ["claude-hooks", "tts"],  # Development-focused skills
+    "dev": ["claude-hooks"],  # Development-focused skills
     "all": [],  # Populated dynamically with all available skills
 }
 

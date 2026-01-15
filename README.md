@@ -46,7 +46,6 @@ Skills are markdown files that Claude Code loads as context when invoked.
 
 **Bundled Skills:**
 - `claude-hooks` - Reference for creating Claude Code hooks
-- `tts` - Text-to-speech mode instructions
 
 ### Claude Code: Permission Profiles
 
@@ -121,7 +120,7 @@ asutils claude tts config --voice "Alex" --rate 200
 ```
 
 **How TTS Works:**
-1. The `/tts` skill instructs Claude to wrap spoken content in `<speak>` tags
+1. The `/tts` command toggles TTS mode and instructs Claude to use `<speak>` tags
 2. A Stop hook fires after each response and extracts spoken content
 3. Text is read aloud using macOS `say` command
 4. Terminal window is focused (configurable)
