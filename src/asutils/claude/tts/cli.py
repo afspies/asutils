@@ -219,6 +219,19 @@ def uninstall_hook():
     console.print("\n[bold]Uninstall complete[/bold]")
 
 
+@app.command("toggle")
+def toggle_tts():
+    """Toggle TTS on/off for the current session."""
+    tts_flag = Path(tempfile.gettempdir()) / "claude-tts-active"
+
+    if tts_flag.exists():
+        tts_flag.unlink()
+        print("DISABLED")
+    else:
+        tts_flag.touch()
+        print("ENABLED")
+
+
 @app.command("enable")
 def enable_tts(
     always: Annotated[
