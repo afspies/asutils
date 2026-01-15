@@ -46,9 +46,9 @@ def is_tts_enabled(session_id: str, config: dict) -> bool:
     if config.get("always_enabled", False):
         return True
 
-    # Check session-specific flag
-    session_flag = Path(tempfile.gettempdir()) / f"claude-tts-{session_id}"
-    return session_flag.exists()
+    # Check TTS active flag (shared across sessions)
+    tts_flag = Path(tempfile.gettempdir()) / "claude-tts-active"
+    return tts_flag.exists()
 
 
 def get_last_assistant_message(transcript_path: str) -> str | None:
