@@ -11,6 +11,7 @@ from asutils.claude import skill
 from asutils.claude.agents import cli as agents
 from asutils.claude.permissions import cli as permission
 from asutils.claude.tts import cli as tts
+from asutils.envsetup import cli as env
 
 app = typer.Typer(name="claude", help="Claude Code utilities")
 app.add_typer(skill.app, name="skill")
@@ -75,6 +76,11 @@ def setup(
         console.print("  [yellow]⚠[/yellow] 'claude' CLI not found - skipping plugin installation")
     console.print()
 
+    # Step 6: Configure environment (aliases, tmux)
+    console.print("[bold cyan]Step 6:[/bold cyan] Configuring environment (aliases, tmux)...")
+    env.setup_env(force=force)
+    console.print()
+
     console.print("[bold green]Setup complete![/bold green]")
     rprint("\n[dim]Claude Code is now configured with:[/dim]")
     rprint("  - Permission profiles installed")
@@ -82,6 +88,8 @@ def setup(
     rprint(f"  - Skills: [cyan]{skill_bundle}[/cyan] bundle")
     rprint("  - All bundled agents installed")
     rprint("  - Anthropic plugins: [cyan]code-simplifier[/cyan]")
+    rprint("  - Shell aliases (cc, ccc, cg, cgc)")
+    rprint("  - Tmux configuration (if installed)")
     rprint("\n[dim]Run 'claude' to start using it![/dim]")
 
 
