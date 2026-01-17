@@ -1,6 +1,6 @@
 [project]
 name = "asutils"
-version = "0.2.17"
+version = "0.2.18"
 description = "Personal CLI utilities"
 readme = "README.md"
 license = { text = "MIT" }
