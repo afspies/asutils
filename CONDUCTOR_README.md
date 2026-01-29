@@ -124,6 +124,14 @@ To use a different environment, change both the `ANTHROPIC_BASE_URL` and the `x-
 - Check key permissions in Portkey dashboard
 - Try regenerating the API key
 
+**Wrong Model Used (Requested Opus, Got Sonnet)**
+- **Cause**: API key assigned to wrong Portkey config
+- **Symptom**: All models route to Sonnet regardless of request
+- **Fix**: In Portkey Dashboard → API Keys, change assigned config to `pc-claude-60f174`
+- **Detect**: Run `./test-conductor-config.sh YOUR_API_KEY` to check routing
+- **Expected config**: `pc-claude-60f174` (named "claude-code-both-live")
+- **Wrong configs**: "Claude-Code" or similar
+
 **Cannot Connect to Gateway**
 - Test connectivity: `curl -I https://live.ai.epicgames.com`
 - Ensure you're on Epic VPN (if required)

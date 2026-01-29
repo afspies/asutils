@@ -116,6 +116,26 @@ The Epic Claude Gateway supports two authentication methods:
 3. Ensure there are no extra spaces or newlines in the API key value
 4. Try regenerating the API key in Portkey
 
+### Issue: Wrong model received (requested Opus, got Sonnet)
+
+**Symptoms:**
+- You set model to Opus in Conductor
+- Portkey logs show Sonnet was used
+- All models route to Sonnet regardless of request
+
+**Cause:** Your API key is assigned to the wrong Portkey config (likely "Claude-Code" instead of "pc-claude-60f174")
+
+**Solution:**
+1. Go to Portkey Dashboard: https://app.portkey.ai/organisation/61d0748c-aba9-4b7c-bf18-008150ba9545/
+2. Navigate to **API Keys** section
+3. Find your API key (starts with the characters you see in your config)
+4. Check the **assigned config** - it should be `pc-claude-60f174` (named "claude-code-both-live")
+5. If it's different (e.g., "Claude-Code"), change it to `pc-claude-60f174`
+6. Save changes
+7. Restart Conductor and test again
+
+**How to detect:** Run `./test-conductor-config.sh YOUR_API_KEY` - it will warn if routing is broken
+
 ### Issue: Requests timeout or fail to connect
 
 **Solution:**

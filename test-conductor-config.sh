@@ -38,27 +38,49 @@ else
     exit 1
 fi
 
-# Test 2: API key validation (with correct headers)
-echo -e "${YELLOW}[2/3]${NC} Testing API key without x-portkey-config..."
-RESPONSE=$(curl -s -w "\nHTTP_CODE:%{http_code}" --max-time 10 \
+# Test 2: API key validation and config check
+echo -e "${YELLOW}[2/3]${NC} Testing API key and checking config..."
+RESPONSE=$(curl -s --max-time 10 \
     -X POST "$GATEWAY_URL/v1/messages" \
     -H "Content-Type: application/json" \
     -H "x-portkey-api-key: $API_KEY" \
     -H "x-portkey-debug: true" \
     -H "x-vertex-ai-llm-request-type: shared" \
     -H "anthropic-version: 2023-06-01" \
-    -d '{"model":"claude-sonnet-4","max_tokens":5,"messages":[{"role":"user","content":"Hi"}]}' \
+    -d '{"model":"claude-opus-4","max_tokens":5,"messages":[{"role":"user","content":"Hi"}]}' \
     2>/dev/null)
 
-HTTP_CODE=$(echo "$RESPONSE" | grep "HTTP_CODE:" | cut -d: -f2)
-BODY=$(echo "$RESPONSE" | grep -v "HTTP_CODE:")
+ACTUAL_MODEL=$(echo "$RESPONSE" | jq -r '.model' 2>/dev/null)
+ERROR_MSG=$(echo "$RESPONSE" | jq -r '.error // .message' 2>/dev/null)
 
-if [ "$HTTP_CODE" = "200" ]; then
+if [ -n "$ACTUAL_MODEL" ] && [ "$ACTUAL_MODEL" != "null" ]; then
     echo -e "${GREEN}✓${NC} API key validated successfully"
-    echo "  Response: $(echo "$BODY" | jq -r '.content[0].text' 2>/dev/null || echo "$BODY")"
+    echo "  Requested: claude-opus-4"
+    echo "  Got: $ACTUAL_MODEL"
+
+    # Check if we got the wrong model (config routing issue)
+    if echo "$ACTUAL_MODEL" | grep -q "sonnet" && ! echo "$ACTUAL_MODEL" | grep -q "opus"; then
+        echo ""
+        echo -e "${RED}⚠ WARNING: Config Routing Issue Detected!${NC}"
+        echo -e "${YELLOW}  You requested Opus but got Sonnet${NC}"
+        echo ""
+        echo "  This means your API key is using the wrong Portkey config."
+        echo "  Expected config: 'pc-claude-60f174' (claude-code-both-live)"
+        echo "  Your config: Likely 'Claude-Code' or similar"
+        echo ""
+        echo "  Fix this in Portkey Dashboard:"
+        echo "  1. Go to: https://app.portkey.ai/organisation/61d0748c-aba9-4b7c-bf18-008150ba9545/"
+        echo "  2. Navigate to API Keys"
+        echo "  3. Find your key: ${API_KEY:0:10}..."
+        echo "  4. Change assigned config to: 'pc-claude-60f174'"
+        echo ""
+    elif echo "$ACTUAL_MODEL" | grep -q "opus"; then
+        echo -e "${GREEN}  ✓ Model routing is working correctly!${NC}"
+    fi
 else
-    echo -e "${RED}✗${NC} API key validation failed (HTTP $HTTP_CODE)"
-    echo "  Response: $BODY"
+    echo -e "${RED}✗${NC} API key validation failed"
+    echo "  Error: $ERROR_MSG"
+    echo "  Response: $RESPONSE"
     exit 1
 fi
 

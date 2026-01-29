@@ -59,6 +59,12 @@ x-vertex-ai-llm-request-type: shared
 - [ ] Verify key permissions in Portkey
 - [ ] Try regenerating key
 
+### Wrong Model (Requested Opus, Got Sonnet)
+- [ ] **Check API key's config in Portkey Dashboard**
+- [ ] Should be: `pc-claude-60f174` (not "Claude-Code")
+- [ ] Change in API Keys section → Assigned Config
+- [ ] Run: `./test-conductor-config.sh YOUR_KEY` to verify
+
 ### Connection Timeout
 - [ ] Test: `curl -I https://live.ai.epicgames.com`
 - [ ] Check VPN connection

@@ -108,20 +108,42 @@ if [ "$HAS_API_KEY" = "y" ] || [ "$HAS_API_KEY" = "Y" ]; then
     echo ""
 
     if [ -n "$API_KEY" ]; then
-        # Test the API key with a simple request
-        echo "  Testing API key..."
-        RESPONSE=$(curl -s -w "\n%{http_code}" --max-time 10 \
-            -X POST "$GATEWAY_URL/v1/complete" \
+        # Test the API key with Opus request to check routing
+        echo "  Testing API key and config routing..."
+        RESPONSE=$(curl -s -w "\nHTTP_CODE:%{http_code}" --max-time 10 \
+            -X POST "$GATEWAY_URL/v1/messages" \
             -H "Content-Type: application/json" \
-            -H "x-portkey-config: $PORTKEY_CONFIG" \
             -H "x-portkey-api-key: $API_KEY" \
-            -d '{"model":"claude-sonnet-4","max_tokens":10,"prompt":"\n\nHuman: Hi\n\nAssistant:"}' \
+            -H "x-portkey-debug: true" \
+            -H "anthropic-version: 2023-06-01" \
+            -d '{"model":"claude-opus-4","max_tokens":5,"messages":[{"role":"user","content":"Hi"}]}' \
             2>/dev/null)
 
-        HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
+        HTTP_CODE=$(echo "$RESPONSE" | grep "HTTP_CODE:" | cut -d: -f2)
+        BODY=$(echo "$RESPONSE" | grep -v "HTTP_CODE:")
+        ACTUAL_MODEL=$(echo "$BODY" | grep -o '"model":"[^"]*"' | cut -d'"' -f4)
 
         if [ "$HTTP_CODE" = "200" ]; then
             check_pass "API key validated successfully"
+
+            # Check for config routing issue
+            if echo "$ACTUAL_MODEL" | grep -q "sonnet" && ! echo "$ACTUAL_MODEL" | grep -q "opus"; then
+                check_warn "Model routing issue detected!"
+                echo "  → Requested: claude-opus-4"
+                echo "  → Got: $ACTUAL_MODEL"
+                echo ""
+                check_warn "Your API key is using the wrong Portkey config"
+                echo "  → Expected config: pc-claude-60f174"
+                echo "  → Your config: Likely 'Claude-Code' or similar"
+                echo ""
+                echo "  Fix this in Portkey Dashboard:"
+                echo "  1. Go to API Keys section"
+                echo "  2. Find your key: ${API_KEY:0:10}..."
+                echo "  3. Change assigned config to: pc-claude-60f174"
+                echo ""
+            elif echo "$ACTUAL_MODEL" | grep -q "opus"; then
+                check_pass "Model routing works correctly (got Opus as expected)"
+            fi
         elif [ "$HTTP_CODE" = "401" ]; then
             check_fail "API key is invalid or expired"
         elif [ "$HTTP_CODE" = "403" ]; then
