@@ -34,6 +34,13 @@ The Epic Claude Gateway is an internal proxy that routes Claude Code requests th
 - Verification checklist
 - Key links and resources
 
+### ⚠️ Common Issues & Gotchas
+**[CONDUCTOR_CONFIG_GOTCHAS.md](CONDUCTOR_CONFIG_GOTCHAS.md)** - Troubleshooting guide
+- x-portkey-config header should NOT be used
+- Wrong Portkey config assignment (all requests → Sonnet)
+- Model name format and routing
+- Step-by-step solutions with verification
+
 ### 🔧 Verification Script
 **[verify-conductor-gateway.sh](verify-conductor-gateway.sh)** - Automated configuration checker
 ```bash
