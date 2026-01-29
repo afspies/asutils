@@ -37,9 +37,8 @@ ANTHROPIC_BASE_URL=https://live.ai.epicgames.com
 # Placeholder auth token (required by Claude Code)
 ANTHROPIC_AUTH_TOKEN=test
 
-# Custom headers for Portkey authentication and configuration
-ANTHROPIC_CUSTOM_HEADERS=x-portkey-config: pc-claude-60f174
-x-portkey-api-key: YOUR_PORTKEY_API_KEY_HERE
+# Custom headers for Portkey authentication
+ANTHROPIC_CUSTOM_HEADERS=x-portkey-api-key: YOUR_PORTKEY_API_KEY_HERE
 x-portkey-debug: true
 x-vertex-ai-llm-request-type: shared
 ```
@@ -47,7 +46,7 @@ x-vertex-ai-llm-request-type: shared
 **Important Notes:**
 - Replace `YOUR_PORTKEY_API_KEY_HERE` with your actual Portkey API key from Step 1
 - The `ANTHROPIC_AUTH_TOKEN=test` is a placeholder - actual authentication happens via the custom headers
-- The `x-portkey-config: pc-claude-60f174` specifies the Live environment configuration
+- **Do NOT include `x-portkey-config` header** - Your API key has a default config in Portkey and overriding it will cause errors
 - Each header should be on a new line in the `ANTHROPIC_CUSTOM_HEADERS` value
 
 #### Optional Variables
@@ -239,14 +238,15 @@ Here's a complete example of the Env configuration in Conductor:
 ```
 ANTHROPIC_BASE_URL=https://live.ai.epicgames.com
 ANTHROPIC_AUTH_TOKEN=test
-ANTHROPIC_CUSTOM_HEADERS=x-portkey-config: pc-claude-60f174
-x-portkey-api-key: pk-abc123-xyz789-example-key-do-not-use
+ANTHROPIC_CUSTOM_HEADERS=x-portkey-api-key: pk-abc123-xyz789-example-key-do-not-use
 x-portkey-debug: true
 x-vertex-ai-llm-request-type: shared
 DISABLE_TELEMETRY=true
 ```
 
 **Remember:** Replace `pk-abc123-xyz789-example-key-do-not-use` with your actual API key!
+
+**Note:** Do NOT include `x-portkey-config` header - your API key has a default config in Portkey.
 
 ## Version Compatibility
 

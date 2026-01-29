@@ -65,13 +65,14 @@ Open **Conductor → Settings → Env** and add:
 ```bash
 ANTHROPIC_BASE_URL=https://live.ai.epicgames.com
 ANTHROPIC_AUTH_TOKEN=test
-ANTHROPIC_CUSTOM_HEADERS=x-portkey-config: pc-claude-60f174
-x-portkey-api-key: YOUR_API_KEY_HERE
+ANTHROPIC_CUSTOM_HEADERS=x-portkey-api-key: YOUR_API_KEY_HERE
 x-portkey-debug: true
 x-vertex-ai-llm-request-type: shared
 ```
 
 Replace `YOUR_API_KEY_HERE` with your actual API key.
+
+**Important**: Do NOT include `x-portkey-config` header - your API key has a default Portkey config.
 
 ### 3. Restart and Test
 
@@ -98,10 +99,11 @@ Run the verification script:
 
 The `ANTHROPIC_CUSTOM_HEADERS` value should contain (each on a new line):
 
-- `x-portkey-config: pc-claude-60f174` - Specifies the Live environment configuration
 - `x-portkey-api-key: YOUR_KEY` - Your Portkey API key for authentication
 - `x-portkey-debug: true` - Enables debug logging for troubleshooting
 - `x-vertex-ai-llm-request-type: shared` - Required for backend routing
+
+**Note**: Do NOT include `x-portkey-config` - your API key already has a default Portkey configuration
 
 ## Available Environments
 

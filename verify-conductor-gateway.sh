@@ -154,10 +154,11 @@ echo "Required environment variables for Conductor Settings → Env:"
 echo ""
 echo -e "${GREEN}ANTHROPIC_BASE_URL${NC}=${GATEWAY_URL}"
 echo -e "${GREEN}ANTHROPIC_AUTH_TOKEN${NC}=test"
-echo -e "${GREEN}ANTHROPIC_CUSTOM_HEADERS${NC}=x-portkey-config: ${PORTKEY_CONFIG}"
-echo "x-portkey-api-key: YOUR_API_KEY_HERE"
+echo -e "${GREEN}ANTHROPIC_CUSTOM_HEADERS${NC}=x-portkey-api-key: YOUR_API_KEY_HERE"
 echo "x-portkey-debug: true"
 echo "x-vertex-ai-llm-request-type: shared"
+echo ""
+echo -e "${YELLOW}Note: Do NOT include x-portkey-config header - your API key has a default config${NC}"
 echo ""
 
 # Final recommendations

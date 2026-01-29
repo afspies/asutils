@@ -13,11 +13,12 @@ Open Conductor → Settings → Env, add:
 ```bash
 ANTHROPIC_BASE_URL=https://live.ai.epicgames.com
 ANTHROPIC_AUTH_TOKEN=test
-ANTHROPIC_CUSTOM_HEADERS=x-portkey-config: pc-claude-60f174
-x-portkey-api-key: YOUR_API_KEY_HERE
+ANTHROPIC_CUSTOM_HEADERS=x-portkey-api-key: YOUR_API_KEY_HERE
 x-portkey-debug: true
 x-vertex-ai-llm-request-type: shared
 ```
+
+**Note**: Do NOT include `x-portkey-config` header. Your API key has a default config in Portkey.
 
 ### 3. Restart & Test
 - Restart Conductor
@@ -36,11 +37,12 @@ x-vertex-ai-llm-request-type: shared
 
 Each header on a new line:
 ```
-x-portkey-config: pc-claude-60f174
 x-portkey-api-key: YOUR_KEY
 x-portkey-debug: true
 x-vertex-ai-llm-request-type: shared
 ```
+
+**Do NOT include** `x-portkey-config` - your API key has a default config.
 
 ## Available Environments
 
