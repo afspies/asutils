@@ -13,6 +13,9 @@ app = typer.Typer(help="Manage Claude Code skills")
 # Bundled skills directory (alongside this module)
 BUNDLED_SKILLS_DIR = Path(__file__).parent / "skills"
 
+# Bundled commands directory (slash commands, not Epic-specific)
+BUNDLED_COMMANDS_DIR = Path(__file__).parent / "commands"
+
 # Epic Games specific skills (optional, not installed by default)
 EPIC_SKILLS_DIR = Path(__file__).parent / "skills" / "epic"
 
@@ -29,6 +32,7 @@ BUNDLES: dict[str, list[str]] = {
     "dev": ["claude-hooks"],  # Development-focused skills
     "all": [],  # Populated dynamically with all available skills
     "epic": [],  # Epic Games specific skills - populated from epic/ subdirectory
+    "commands": [],  # Bundled slash commands - populated from commands/ subdirectory
 }
 
 
@@ -50,11 +54,22 @@ def get_epic_skills() -> dict[str, Path]:
     return skills
 
 
+def get_bundled_commands() -> dict[str, Path]:
+    """Return dict of command_name -> path for bundled commands (non-Epic)."""
+    commands = {}
+    if BUNDLED_COMMANDS_DIR.exists():
+        for f in BUNDLED_COMMANDS_DIR.glob("*.md"):
+            commands[f.stem] = f
+    return commands
+
+
 def get_all_available_skills() -> dict[str, Path]:
-    """Return dict of all skills including epic (prefixed with 'epic/')."""
+    """Return dict of all skills including epic and commands (prefixed with 'epic/' or 'commands/')."""
     skills = get_bundled_skills()
     for name, path in get_epic_skills().items():
         skills[f"epic/{name}"] = path
+    for name, path in get_bundled_commands().items():
+        skills[f"commands/{name}"] = path
     return skills
 
 
@@ -73,6 +88,8 @@ def get_bundle_skills(bundle: str) -> list[str]:
         return list(get_bundled_skills().keys())
     if bundle == "epic":
         return [f"epic/{name}" for name in get_epic_skills().keys()]
+    if bundle == "commands":
+        return [f"commands/{name}" for name in get_bundled_commands().keys()]
     return BUNDLES.get(bundle, [])
 
 
@@ -92,14 +109,16 @@ def list_skills(
         bool, typer.Option("--installed", "-i", help="Show installed skills")
     ] = False,
     epic: Annotated[bool, typer.Option("--epic", "-e", help="Show Epic Games skills")] = False,
+    commands: Annotated[bool, typer.Option("--commands", "-c", help="Show bundled commands")] = False,
 ):
     """List available and installed skills."""
-    # Default to showing both if neither specified
-    if not bundled and not installed and not epic:
-        bundled = installed = epic = True
+    # Default to showing all if none specified
+    if not bundled and not installed and not epic and not commands:
+        bundled = installed = epic = commands = True
 
     console = Console()
     bundled_skills = get_bundled_skills()
+    bundled_cmds = get_bundled_commands()
     epic_skills = get_epic_skills()
     installed_skills = get_installed_skills()
     installed_commands = get_installed_commands()
@@ -144,8 +163,36 @@ def list_skills(
 
         console.print(table)
 
-    if installed:
+    if commands:
         if bundled or epic:
+            console.print()
+
+        table = Table(title="Bundled Commands (use --bundle commands to install)")
+        table.add_column("Name", style="blue")
+        table.add_column("Installed", style="green")
+        table.add_column("Description")
+
+        for name, path in sorted(bundled_cmds.items()):
+            is_installed = name in installed_commands
+            # Try to extract description from frontmatter
+            content = path.read_text()
+            desc = ""
+            if content.startswith("---"):
+                try:
+                    import yaml
+                    _, frontmatter, _ = content.split("---", 2)
+                    meta = yaml.safe_load(frontmatter)
+                    desc = meta.get("description", "")[:60]
+                    if len(meta.get("description", "")) > 60:
+                        desc += "..."
+                except Exception:
+                    pass
+            table.add_row(f"commands/{name}", "yes" if is_installed else "no", desc)
+
+        console.print(table)
+
+    if installed:
+        if bundled or epic or commands:
             console.print()  # Spacing between tables
 
         table = Table(title="Installed Skills (~/.claude/skills/)")
@@ -170,7 +217,12 @@ def list_skills(
         table.add_column("Path")
 
         for name, path in sorted(installed_commands.items()):
-            source = "epic" if name in epic_skills else "custom"
+            if name in epic_skills:
+                source = "epic"
+            elif name in bundled_cmds:
+                source = "bundled"
+            else:
+                source = "custom"
             table.add_row(name, source, str(path))
 
         if not installed_commands:
@@ -205,9 +257,9 @@ def show_skill(
 
 @app.command("add")
 def add_skill(
-    name: Annotated[str | None, typer.Argument(help="Skill name to add (use 'epic/name' for Epic skills)")] = None,
+    name: Annotated[str | None, typer.Argument(help="Skill name to add (use 'epic/name' or 'commands/name')")] = None,
     bundle: Annotated[
-        str | None, typer.Option("--bundle", "-b", help="Add skills from bundle (e.g., 'epic')")
+        str | None, typer.Option("--bundle", "-b", help="Add skills from bundle (e.g., 'epic', 'commands')")
     ] = None,
     force: Annotated[
         bool, typer.Option("--force", "-f", help="Overwrite existing skills")
@@ -216,7 +268,8 @@ def add_skill(
     """Add a skill to Claude Code's skills/commands directory.
 
     For Epic Games specific skills, use 'epic/skillname' or --bundle epic.
-    Epic skills are installed to ~/.claude/commands/ as slash commands.
+    For bundled commands, use 'commands/name' or --bundle commands.
+    Both epic and commands are installed to ~/.claude/commands/ as slash commands.
     """
     if name is None and bundle is None:
         rprint("[red]Provide either a skill name or --bundle[/red]")
@@ -242,11 +295,12 @@ def add_skill(
             rprint(f"[dim]Use 'asutils skill list --bundled' to see available skills[/dim]")
             continue
 
-        # Epic skills go to commands directory, others to skills
+        # Epic skills and bundled commands go to commands directory, others to skills
         is_epic = skill_name.startswith("epic/")
-        if is_epic:
+        is_command = skill_name.startswith("commands/")
+        if is_epic or is_command:
             target_dir = CLAUDE_COMMANDS_DIR
-            # Strip 'epic/' prefix for the installed name
+            # Strip 'epic/' or 'commands/' prefix for the installed name
             installed_name = skill_name.split("/", 1)[1]
         else:
             target_dir = CLAUDE_SKILLS_DIR
@@ -261,7 +315,7 @@ def add_skill(
 
         source = all_skills[skill_name]
         target.write_text(source.read_text())
-        location = "commands" if is_epic else "skills"
+        location = "commands" if (is_epic or is_command) else "skills"
         rprint(f"[green]Added '{installed_name}' to ~/.claude/{location}/[/green]")
 
 
