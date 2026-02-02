@@ -1,11 +1,28 @@
 ---
 allowed-tools: Bash(asutils confluence:*)
-description: Search Epic's internal Confluence wiki. Use for finding internal docs, processes, architecture decisions, and technical knowledge.
+description: |
+  Reference for asutils confluence CLI commands. Use the confluence-search AGENT for actual searches.
+  This skill is a command reference only - invoke the agent for search tasks.
 ---
 
-# Confluence Search Skill
+# Confluence CLI Reference
 
-Search Epic's internal Confluence wiki at `epicgames.atlassian.net/wiki` using the asutils CLI.
+Reference for `asutils confluence` commands to search Epic's internal wiki at `epicgames.atlassian.net/wiki`.
+
+## When to Use What
+
+| Scenario | Use |
+|----------|-----|
+| User asks to search/find internal docs | **confluence-search agent** |
+| Complex research needing multiple searches | **confluence-search agent** |
+| You need to look up a specific command syntax | This skill (reference) |
+| Simple single command you already know | Direct Bash call |
+
+**For most Confluence searches, delegate to the `confluence-search` agent.**
+
+## IMPORTANT: Do NOT use WebSearch for Confluence
+
+Confluence is Epic's **internal** wiki. WebSearch cannot access it. Always use `asutils confluence` commands.
 
 ## Quick Reference
 
@@ -79,23 +96,6 @@ asutils confluence spaces
 # Limit results
 asutils confluence spaces --limit 100
 ```
-
-## Search Workflow
-
-When asked to find information in Confluence:
-
-1. **Extract search terms** from user request
-2. **Run parallel search** with query variations:
-   ```bash
-   asutils confluence search "main term" "synonym" "related term" --parallel --limit 10
-   ```
-3. **Review results** and identify relevant pages
-4. **Fetch full content** of top pages:
-   ```bash
-   asutils confluence page <page_id>
-   ```
-5. **Synthesize** information with proper citations
-6. **Provide URLs** so user can explore further
 
 ## CQL Reference
 
