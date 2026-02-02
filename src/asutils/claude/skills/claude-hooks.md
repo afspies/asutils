@@ -70,6 +70,71 @@ Quick reference for setting up hooks in Claude Code.
 - `WebFetch`, `WebSearch` - Web operations
 - `mcp__<server>__<tool>` - MCP tools
 
+## Permission Evaluation Order
+
+Understanding when hooks can and cannot control permissions:
+
+```
+1. settings.json DENY rules (highest priority)
+       ↓
+2. PreToolUse hooks (exit code 2 = block)
+       ↓
+3. settings.json ALLOW rules
+       ↓
+4. PermissionRequest hooks (only on "ask" decisions)
+       ↓
+5. User dialog (if still "ask")
+```
+
+### Key Constraints
+
+| Scenario | Result |
+|----------|--------|
+| Hook tries to ALLOW, settings.json DENIES | **BLOCKED** - deny rules win |
+| Hook BLOCKS (exit 2), settings.json ALLOWS | **BLOCKED** - hook wins |
+| PermissionRequest returns `allow` | **ALLOWED** (if no prior deny) |
+
+**IMPORTANT**: PermissionRequest hooks only fire when settings.json evaluates to "ask" (not explicit allow/deny). They cannot override explicit deny rules.
+
+## Hook Strategies by Use Case
+
+### Strategy 1: Safety Blocking (PreToolUse)
+**Use for:** Catastrophic command prevention
+**Works:** Always - regardless of settings.json
+**Exit code:** 2 to block
+
+```python
+# In PreToolUse hook
+if is_dangerous(tool_input):
+    print("Blocked: dangerous command", file=sys.stderr)
+    sys.exit(2)  # Blocks even if settings.json allows
+```
+
+### Strategy 2: Auto-Allow Convenience (PermissionRequest)
+**Use for:** Auto-approve common dev tools
+**Works:** Only if settings.json doesn't explicitly deny
+
+```python
+# In PermissionRequest hook
+if is_safe_dev_tool(tool_name):
+    print(json.dumps({
+        "hookSpecificOutput": {
+            "hookEventName": "PermissionRequest",
+            "decision": {"behavior": "allow"}
+        }
+    }))
+```
+
+### Strategy 3: Workflow Automation (PostToolUse)
+**Use for:** Trigger actions after tool completion
+**Works:** Always - runs after tool completes
+
+```python
+# In PostToolUse hook
+if tool_name == "Bash" and "gh pr create" in command:
+    trigger_code_review()
+```
+
 ## Hook Input (via stdin)
 
 Hooks receive JSON with:
@@ -189,3 +254,63 @@ asutils claude permission default dev
 # Check status
 asutils claude permission status
 ```
+
+## Hooks in Claude Code Plugins
+
+Plugins can provide hooks via `hooks/hooks.json`:
+
+```json
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "prompt",
+            "prompt": "${CLAUDE_PLUGIN_ROOT}/hooks/safety-check.md"
+          }
+        ]
+      }
+    ],
+    "PermissionRequest": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "prompt",
+            "prompt": "${CLAUDE_PLUGIN_ROOT}/hooks/permissions-dev.md"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "prompt",
+            "prompt": "${CLAUDE_PLUGIN_ROOT}/hooks/workflow-automation.md"
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+### Plugin Hook Types
+
+- **`type: "prompt"`** - Markdown file with instructions for Claude to evaluate
+- **`type: "command"`** - Shell command to execute
+
+### User Control
+
+- `/hooks` command allows toggling individual plugin hooks per matcher
+- Plugin hooks **merge** with user and project hooks - they don't override
+- Users can disable any plugin hook without modifying the plugin
+
+### Plugin Hook Path Variables
+
+- `${CLAUDE_PLUGIN_ROOT}` - Root directory of the plugin
+- Use this to reference hook files relative to the plugin
