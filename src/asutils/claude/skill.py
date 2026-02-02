@@ -16,11 +16,17 @@ BUNDLED_SKILLS_DIR = Path(__file__).parent / "skills"
 # Epic Games specific skills (optional, not installed by default)
 EPIC_SKILLS_DIR = Path(__file__).parent / "skills" / "epic"
 
+# Epic Games specific agents
+EPIC_AGENTS_DIR = Path(__file__).parent / "agents" / "epic"
+
 # Claude Code skills directory
 CLAUDE_SKILLS_DIR = Path.home() / ".claude" / "skills"
 
 # Claude Code commands directory (for skills that act as slash commands)
 CLAUDE_COMMANDS_DIR = Path.home() / ".claude" / "commands"
+
+# Claude Code agents directory (for subagents)
+CLAUDE_AGENTS_DIR = Path.home() / ".claude" / "agents"
 
 # Predefined bundles
 BUNDLES: dict[str, list[str]] = {
@@ -48,6 +54,24 @@ def get_epic_skills() -> dict[str, Path]:
         for f in EPIC_SKILLS_DIR.glob("*.md"):
             skills[f.stem] = f
     return skills
+
+
+def get_epic_agents() -> dict[str, Path]:
+    """Return dict of agent_name -> path for Epic Games specific agents."""
+    agents = {}
+    if EPIC_AGENTS_DIR.exists():
+        for f in EPIC_AGENTS_DIR.glob("*.md"):
+            agents[f.stem] = f
+    return agents
+
+
+def get_installed_agents() -> dict[str, Path]:
+    """Return dict of agent_name -> path for installed agents."""
+    agents = {}
+    if CLAUDE_AGENTS_DIR.exists():
+        for f in CLAUDE_AGENTS_DIR.glob("*.md"):
+            agents[f.stem] = f
+    return agents
 
 
 def get_all_available_skills() -> dict[str, Path]:
@@ -263,6 +287,31 @@ def add_skill(
         target.write_text(source.read_text())
         location = "commands" if is_epic else "skills"
         rprint(f"[green]Added '{installed_name}' to ~/.claude/{location}/[/green]")
+
+    # Also install epic agents when using the epic bundle
+    if bundle == "epic":
+        _install_epic_agents(force)
+
+
+def _install_epic_agents(force: bool = False) -> None:
+    """Install Epic-specific agents to ~/.claude/agents/."""
+    epic_agents = get_epic_agents()
+    installed_agents = get_installed_agents()
+
+    if not epic_agents:
+        return
+
+    CLAUDE_AGENTS_DIR.mkdir(parents=True, exist_ok=True)
+
+    for agent_name, source_path in epic_agents.items():
+        target = CLAUDE_AGENTS_DIR / f"{agent_name}.md"
+
+        if target.exists() and not force:
+            rprint(f"[yellow]Agent '{agent_name}' already installed (use --force to overwrite)[/yellow]")
+            continue
+
+        target.write_text(source_path.read_text())
+        rprint(f"[green]Added agent '{agent_name}' to ~/.claude/agents/[/green]")
 
 
 @app.command("remove")
