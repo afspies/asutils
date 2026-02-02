@@ -47,6 +47,12 @@ Skills are markdown files that Claude Code loads as context when invoked.
 **Bundled Skills:**
 - `claude-hooks` - Reference for creating Claude Code hooks
 
+**Epic Skills Bundle** (for Epic Games employees):
+- `epic/jira` - JIRA issue management for Epic's Atlassian Cloud
+- `epic/confluence` - Confluence search via asutils CLI
+
+Install with: `asutils claude skill add --bundle epic`
+
 ### Claude Code: Permission Profiles
 
 Permission profiles auto-approve tool calls matching defined rules, reducing permission prompts.
@@ -132,6 +138,57 @@ rate: 175              # Words per minute
 focus_window: true     # Focus terminal after speaking
 terminal_app: auto     # auto | Terminal | iTerm | none
 always_enabled: false  # Persistent mode
+```
+
+### Confluence Search (Epic Games)
+
+Search Epic's internal Confluence wiki directly from the command line.
+
+| Command | Description |
+|---------|-------------|
+| `asutils confluence search "query"` | Search for pages |
+| `asutils confluence search "q1" "q2" --parallel` | Multi-query parallel search |
+| `asutils confluence page <id>` | Get page content (markdown) |
+| `asutils confluence spaces` | List available spaces |
+| `asutils confluence cql 'text~"term"'` | Raw CQL search |
+| `asutils confluence children <id>` | Get child pages |
+
+**Prerequisites:**
+- Set `JIRA_API_TOKEN` environment variable (same token works for Confluence)
+- Run `asutils epic setup` to configure
+
+**Usage:**
+```bash
+# Search across all Confluence
+asutils confluence search "deployment process"
+
+# Parallel search with multiple queries
+asutils confluence search "authentication" "OAuth" "SSO" --parallel
+
+# Get full page content
+asutils confluence page 12345678
+
+# Search within a specific space
+asutils confluence search "API" --space DEV
+```
+
+### Epic Setup
+
+One-command setup for Epic Games integrations.
+
+| Command | Description |
+|---------|-------------|
+| `asutils epic setup` | Configure Epic integrations and install skills |
+| `asutils epic status` | Show integration status |
+| `asutils epic verify` | Test Confluence authentication |
+
+**Usage:**
+```bash
+# Full setup (creates config, verifies auth, installs skills)
+asutils epic setup
+
+# Check status
+asutils epic status
 ```
 
 ## Development
