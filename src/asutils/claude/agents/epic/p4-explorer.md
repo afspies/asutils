@@ -95,19 +95,36 @@ asutils p4 status
 
 ## Epic Depot Structure
 
-### Main Development Branches
+### Branch Aliases
 
 | Alias | Path | Content |
 |-------|------|---------|
-| fortnite, fn | //Fortnite/Main/ | Fortnite main development |
-| ue5 | //UE5/Main/ | Unreal Engine 5 source |
+| fortnite, fn, fn-main | //Fortnite/Main/ | Fortnite main development |
+| valkyrie, fn-valkyrie | //Fortnite/Dev-Valkyrie/ | Fortnite Valkyrie dev branch |
+| fn-uefn | //Fortnite/Dev-Main-UEFN/ | Fortnite UEFN branch |
+| ue5, ue5-main | //UE5/Main/ | Unreal Engine 5 source |
 | ue4 | //UE4/Main/ | Unreal Engine 4 source |
 | eos | //EOSSDK/Main/ | Epic Online Services SDK |
 
-### Release Branches
-- `//Fortnite/Release-X.X/` - Fortnite releases (e.g., Release-16.00, Release-25.00)
-- `//UE5/Release-X.X/` - UE5 releases
-- `//UE4/Release-4.27Plus/` - UE4 releases
+### Discovering Branches
+```bash
+# List all branches for a depot
+asutils p4 branches fortnite
+
+# List only Dev branches
+asutils p4 branches fn --dev
+
+# List only Release branches
+asutils p4 branches ue5 --release
+
+# Filter by pattern
+asutils p4 branches fn -f "*Valkyrie*"
+```
+
+### Branch Types
+- `//Depot/Main/` - Main development branch (most active)
+- `//Depot/Dev-*/` - Development branches (feature work, experiments)
+- `//Depot/Release-X.X/` - Release branches (e.g., Release-40.10)
 
 ### Support Areas
 
@@ -118,6 +135,7 @@ asutils p4 status
 | plugins | //GamePlugins/ | Game plugins |
 
 ### Common Fortnite Paths
+Replace `Main` with your target branch (e.g., `Dev-Valkyrie`):
 - `//Fortnite/Main/Source/` - C++ source code
 - `//Fortnite/Main/Content/` - Content/assets
 - `//Fortnite/Main/Config/` - Configuration files

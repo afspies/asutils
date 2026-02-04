@@ -187,6 +187,7 @@ asutils p4 setup  # Interactive setup (installs p4, configures connection)
 | `asutils p4 ls <path>` | List directories at depot path |
 | `asutils p4 find <pattern>` | Find files matching pattern |
 | `asutils p4 tree <path>` | Show depot structure as tree |
+| `asutils p4 branches <depot>` | List available branches |
 | `asutils p4 info <path>` | Get file details (fstat) |
 | `asutils p4 history <path>` | Show file change history |
 | `asutils p4 cat <path>` | Print file contents |
@@ -204,6 +205,7 @@ asutils p4 setup  # Interactive setup (installs p4, configures connection)
 | Alias | Path |
 |-------|------|
 | fortnite, fn | //Fortnite/Main/ |
+| valkyrie, fn-valkyrie | //Fortnite/Dev-Valkyrie/ |
 | ue5 | //UE5/Main/ |
 | ue4 | //UE4/Main/ |
 | eos | //EOSSDK/Main/ |
@@ -215,14 +217,20 @@ asutils p4 setup  # Interactive setup (installs p4, configures connection)
 ```bash
 # List using aliases
 asutils p4 ls fortnite
-asutils p4 ls ue5 -f  # Include files
+asutils p4 ls valkyrie        # Use Dev-Valkyrie branch
+asutils p4 ls ue5 -f          # Include files
+
+# Discover branches
+asutils p4 branches fortnite  # All Fortnite branches
+asutils p4 branches fn --dev  # Only Dev branches
+asutils p4 branches fn -f "*Valkyrie*"
 
 # Find files by pattern
 asutils p4 find "*.Build.cs" -p fortnite -l 50
-asutils p4 find "*Controller*" -p //Fortnite/Main/Source/
+asutils p4 find "*Controller*" -p //Fortnite/Dev-Valkyrie/Source/
 
 # Tree view
-asutils p4 tree fortnite -d 3
+asutils p4 tree valkyrie -d 3
 
 # File details
 asutils p4 info //Fortnite/Main/Build.cs

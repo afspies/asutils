@@ -526,6 +526,62 @@ def aliases_cmd():
     console.print(table)
 
 
+@app.command("branches")
+def branches_cmd(
+    depot: Annotated[str, typer.Argument(help="Depot name or alias (fortnite, ue5, etc.)")] = "fortnite",
+    filter_pattern: Annotated[str | None, typer.Option("-f", "--filter", help="Filter pattern (Dev-*, Release-*, *Valkyrie*)")] = None,
+    dev_only: Annotated[bool, typer.Option("--dev", help="Show only Dev branches")] = False,
+    release_only: Annotated[bool, typer.Option("--release", help="Show only Release branches")] = False,
+    json_output: Annotated[bool, typer.Option("--json", help="Output as JSON")] = False,
+):
+    """List available branches for a depot.
+
+    Examples:
+        asutils p4 branches fortnite              # All Fortnite branches
+        asutils p4 branches fn --dev              # Only Dev branches
+        asutils p4 branches ue5 --release         # Only Release branches
+        asutils p4 branches fn -f "*Valkyrie*"    # Filter by pattern
+    """
+    try:
+        # Apply type filter
+        if dev_only:
+            filter_pattern = "Dev-*"
+        elif release_only:
+            filter_pattern = "Release-*"
+
+        branches = api.list_branches(depot, filter_pattern)
+
+        if json_output:
+            rprint(json.dumps(branches, indent=2))
+        else:
+            console = Console()
+            table = Table(title=f"Branches in {depot}")
+            table.add_column("Name", style="cyan")
+            table.add_column("Type", style="yellow", width=8)
+            table.add_column("Path", style="dim")
+
+            # Sort: Main first, then Dev, then Release
+            type_order = {"main": 0, "dev": 1, "release": 2, "other": 3}
+            sorted_branches = sorted(branches, key=lambda b: (type_order.get(b["type"], 3), b["name"]))
+
+            for b in sorted_branches:
+                type_style = {
+                    "main": "[bold green]main[/bold green]",
+                    "dev": "[cyan]dev[/cyan]",
+                    "release": "[yellow]release[/yellow]",
+                    "other": "[dim]other[/dim]",
+                }.get(b["type"], b["type"])
+                table.add_row(b["name"], type_style, b["path"])
+
+            console.print(table)
+            rprint(f"\n[dim]Found {len(branches)} branches[/dim]")
+            rprint("[dim]Use path directly: asutils p4 ls //Fortnite/Dev-Valkyrie/[/dim]")
+
+    except RuntimeError as e:
+        rprint(f"[red]Error:[/red] {e}")
+        raise typer.Exit(1)
+
+
 @app.command("verify")
 def verify_cmd():
     """Verify P4 connection is working.

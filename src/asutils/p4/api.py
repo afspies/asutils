@@ -3,7 +3,7 @@
 import subprocess
 from typing import Any
 
-from asutils.p4.config import resolve_depot_path
+from asutils.p4.config import DEPOT_ROOTS, resolve_depot_path
 
 
 def run_p4(args: list[str], timeout: int = 30) -> tuple[int, str, str]:
@@ -333,3 +333,60 @@ def print_file(depot_path: str, revision: int | None = None) -> str:
 
     stdout = run_p4_checked(["print", "-q", path], timeout=60)
     return stdout
+
+
+def list_branches(depot: str, filter_pattern: str | None = None) -> list[dict]:
+    """List branches/streams for a depot.
+
+    Args:
+        depot: Depot name or alias (e.g., 'fortnite', 'ue5')
+        filter_pattern: Optional filter (e.g., 'Dev-*', 'Release-*', '*Valkyrie*')
+
+    Returns:
+        List of dicts with 'name', 'path', and 'type' (Main/Dev/Release)
+    """
+    # Resolve depot root
+    depot_lower = depot.lower()
+    if depot_lower in DEPOT_ROOTS:
+        root = DEPOT_ROOTS[depot_lower]
+    elif depot.startswith("//"):
+        # Extract root from full path
+        parts = depot.rstrip("/").split("/")
+        root = f"//{parts[2]}" if len(parts) > 2 else depot
+    else:
+        root = f"//{depot}"
+
+    stdout = run_p4_checked(["dirs", f"{root}/*"])
+
+    branches = []
+    for line in stdout.strip().split("\n"):
+        line = line.strip()
+        if not line or line.startswith("error"):
+            continue
+
+        # Extract branch name from path
+        name = line.rsplit("/", 1)[-1]
+
+        # Apply filter if specified
+        if filter_pattern:
+            import fnmatch
+            if not fnmatch.fnmatch(name, filter_pattern):
+                continue
+
+        # Determine branch type
+        if name == "Main":
+            branch_type = "main"
+        elif name.startswith("Dev-"):
+            branch_type = "dev"
+        elif name.startswith("Release-"):
+            branch_type = "release"
+        else:
+            branch_type = "other"
+
+        branches.append({
+            "name": name,
+            "path": line,
+            "type": branch_type,
+        })
+
+    return branches

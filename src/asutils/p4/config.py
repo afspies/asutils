@@ -12,18 +12,34 @@ SERVERS = {
 
 # Quick path aliases for Epic depot structure
 DEPOT_ALIASES = {
-    # Main development
+    # Fortnite branches
     "fortnite": "//Fortnite/Main",
     "fn": "//Fortnite/Main",  # Short alias
-    "fortnite-release": "//Fortnite/Release-*",
+    "fn-main": "//Fortnite/Main",
+    "fn-valkyrie": "//Fortnite/Dev-Valkyrie",
+    "valkyrie": "//Fortnite/Dev-Valkyrie",
+    "fn-uefn": "//Fortnite/Dev-Main-UEFN",
+    # UE5 branches
     "ue5": "//UE5/Main",
+    "ue5-main": "//UE5/Main",
+    # UE4 branches
     "ue4": "//UE4/Main",
+    # EOS
     "eos": "//EOSSDK/Main",
     # Support areas
     "3rdparty": "//depot/3rdParty",
     "thirdparty": "//depot/3rdParty",
     "tools": "//depot/InternalTools",
     "plugins": "//GamePlugins",
+}
+
+# Base depot roots for branch discovery
+DEPOT_ROOTS = {
+    "fortnite": "//Fortnite",
+    "fn": "//Fortnite",
+    "ue5": "//UE5",
+    "ue4": "//UE4",
+    "eos": "//EOSSDK",
 }
 
 
