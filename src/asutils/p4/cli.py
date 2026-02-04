@@ -1,17 +1,196 @@
 """CLI commands for Perforce exploration."""
 
 import json
+import os
+import shutil
+import subprocess
+from pathlib import Path
 from typing import Annotated
 
 import typer
 from rich import print as rprint
 from rich.console import Console
+from rich.panel import Panel
 from rich.table import Table
 from rich.tree import Tree
 
 from asutils.p4 import api, config
 
 app = typer.Typer(name="p4", help="Explore Epic's Perforce depot")
+
+
+@app.command("setup")
+def setup_cmd(
+    skip_install: Annotated[bool, typer.Option("--skip-install", help="Skip p4 installation check")] = False,
+):
+    """Interactive setup for Perforce CLI and configuration.
+
+    Guides you through:
+    1. Installing p4 CLI (via Homebrew on macOS)
+    2. Configuring P4PORT (server address)
+    3. Configuring P4USER (your username)
+    4. Testing the connection
+
+    Examples:
+        asutils p4 setup
+        asutils p4 setup --skip-install
+    """
+    console = Console()
+
+    console.print(Panel(
+        "[bold]Perforce Setup for Epic Games[/bold]\n\n"
+        "This will help you configure the Perforce CLI to connect to Epic's depot.",
+        title="🔧 P4 Setup",
+    ))
+
+    # Step 1: Check if p4 is installed
+    if not skip_install:
+        rprint("\n[bold]Step 1: Checking p4 installation...[/bold]")
+        p4_path = shutil.which("p4")
+
+        if p4_path:
+            rprint(f"[green]✓[/green] p4 found at: {p4_path}")
+        else:
+            rprint("[yellow]![/yellow] p4 command not found")
+
+            # Check if brew is available (macOS)
+            if shutil.which("brew"):
+                rprint("\n[dim]Homebrew detected. You can install p4 with:[/dim]")
+                rprint("  [cyan]brew install --cask p4[/cyan]")
+
+                if typer.confirm("\nInstall p4 via Homebrew now?", default=True):
+                    rprint("\n[dim]Running: brew install --cask p4[/dim]")
+                    result = subprocess.run(
+                        ["brew", "install", "--cask", "p4"],
+                        capture_output=False,
+                    )
+                    if result.returncode == 0:
+                        rprint("[green]✓[/green] p4 installed successfully")
+                    else:
+                        rprint("[red]✗[/red] Installation failed. Please install manually.")
+                        raise typer.Exit(1)
+                else:
+                    rprint("\n[dim]Skipping installation. Install manually with:[/dim]")
+                    rprint("  [cyan]brew install --cask p4[/cyan]")
+                    rprint("\nThen run [cyan]asutils p4 setup --skip-install[/cyan] to continue.")
+                    raise typer.Exit(0)
+            else:
+                rprint("\n[dim]Please install Perforce CLI manually:[/dim]")
+                rprint("  macOS:   [cyan]brew install --cask p4[/cyan]")
+                rprint("  Windows: Download from https://www.perforce.com/downloads/helix-command-line-client-p4")
+                rprint("  Linux:   Use your package manager or download from Perforce")
+                rprint("\nThen run [cyan]asutils p4 setup --skip-install[/cyan] to continue.")
+                raise typer.Exit(1)
+
+    # Step 2: Configure P4PORT
+    rprint("\n[bold]Step 2: Configuring P4PORT (server address)...[/bold]")
+
+    current_port = os.environ.get("P4PORT", "")
+    if current_port:
+        rprint(f"[dim]Current P4PORT:[/dim] {current_port}")
+
+    rprint("\n[dim]Epic Perforce servers:[/dim]")
+    rprint(f"  1. Internal network: [cyan]{config.SERVERS['internal']}[/cyan]")
+    rprint(f"  2. VPN connection:   [cyan]{config.SERVERS['vpn']}[/cyan]")
+
+    server_choice = typer.prompt(
+        "\nWhich server? (1=internal, 2=vpn, or enter custom)",
+        default="1" if not current_port else "skip",
+    )
+
+    if server_choice == "1":
+        p4port = config.SERVERS["internal"]
+    elif server_choice == "2":
+        p4port = config.SERVERS["vpn"]
+    elif server_choice.lower() == "skip":
+        p4port = current_port
+    else:
+        p4port = server_choice
+
+    if p4port and p4port != current_port:
+        _add_to_shell_profile("P4PORT", p4port)
+
+    # Step 3: Configure P4USER
+    rprint("\n[bold]Step 3: Configuring P4USER (username)...[/bold]")
+
+    current_user = os.environ.get("P4USER", "")
+    if current_user:
+        rprint(f"[dim]Current P4USER:[/dim] {current_user}")
+
+    rprint("\n[dim]Your P4 username is typically: firstname.lastname[/dim]")
+    rprint("[dim](Same as your Okta/Epic login, with a dot not underscore)[/dim]")
+
+    default_user = current_user or ""
+    p4user = typer.prompt(
+        "\nEnter your P4 username",
+        default=default_user if default_user else None,
+    )
+
+    if p4user and p4user != current_user:
+        _add_to_shell_profile("P4USER", p4user)
+
+    # Step 4: Test connection
+    rprint("\n[bold]Step 4: Testing connection...[/bold]")
+
+    # Temporarily set env vars for this process to test
+    if p4port:
+        os.environ["P4PORT"] = p4port
+    if p4user:
+        os.environ["P4USER"] = p4user
+
+    success, message = config.verify_connection()
+
+    if success:
+        rprint(f"[green]✓[/green] {message}")
+        rprint("\n[bold green]Setup complete![/bold green]")
+        rprint("\n[dim]Try these commands:[/dim]")
+        rprint("  [cyan]asutils p4 ls fortnite[/cyan]     # List Fortnite depot")
+        rprint("  [cyan]asutils p4 aliases[/cyan]        # Show all depot aliases")
+        rprint("  [cyan]asutils p4 tree ue5 -d 2[/cyan]  # Browse UE5 structure")
+    else:
+        rprint(f"[yellow]![/yellow] {message}")
+        rprint("\n[dim]Connection not working yet. Common issues:[/dim]")
+        rprint("  • Not connected to Epic network or VPN")
+        rprint("  • Incorrect username format (should be firstname.lastname)")
+        rprint("  • Need to authenticate: run [cyan]p4 login[/cyan]")
+        rprint("\n[dim]After fixing, verify with:[/dim] [cyan]asutils p4 verify[/cyan]")
+
+
+def _add_to_shell_profile(var_name: str, value: str) -> None:
+    """Add environment variable export to shell profile."""
+    # Determine shell profile
+    shell = os.environ.get("SHELL", "/bin/bash")
+    if "zsh" in shell:
+        profile = Path.home() / ".zshrc"
+    else:
+        profile = Path.home() / ".bashrc"
+
+    export_line = f'export {var_name}="{value}"'
+
+    # Check if already in profile
+    if profile.exists():
+        content = profile.read_text()
+        if f"export {var_name}=" in content:
+            rprint(f"[dim]Note: {var_name} already in {profile.name}, updating...[/dim]")
+            # Replace existing line
+            lines = content.split("\n")
+            new_lines = []
+            for line in lines:
+                if line.strip().startswith(f"export {var_name}="):
+                    new_lines.append(export_line)
+                else:
+                    new_lines.append(line)
+            profile.write_text("\n".join(new_lines))
+            rprint(f"[green]✓[/green] Updated {var_name} in {profile.name}")
+            return
+
+    # Append to profile
+    with open(profile, "a") as f:
+        f.write(f"\n# Perforce configuration (added by asutils p4 setup)\n")
+        f.write(f"{export_line}\n")
+
+    rprint(f"[green]✓[/green] Added {var_name} to {profile.name}")
+    rprint(f"[dim]Run [cyan]source ~/{profile.name}[/cyan] or restart your terminal[/dim]")
 
 
 @app.command("ls")

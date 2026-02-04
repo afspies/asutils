@@ -222,6 +222,12 @@ asutils p4 find "*" -p //depot/3rdParty/libcurl/ -l 50
 
 ## Troubleshooting
 
+### First-Time Setup
+```bash
+# Interactive setup wizard (installs p4, configures connection)
+asutils p4 setup
+```
+
 ### Connection Issues
 ```bash
 # Check connection
@@ -232,9 +238,11 @@ asutils p4 status
 ```
 
 If connection fails:
+- Run `asutils p4 setup` for guided configuration
 - Internal network: `export P4PORT=perforce:1666`
 - VPN: `export P4PORT=perforce-proxy-vpn.epicgames.net:1666`
-- Check P4USER and P4CLIENT are set
+- Check P4USER is set (firstname.lastname format)
+- May need to run `p4 login` to authenticate
 
 ### No Results
 - Check path aliases with `asutils p4 aliases`

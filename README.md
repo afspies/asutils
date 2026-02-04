@@ -176,8 +176,14 @@ asutils confluence search "API" --space DEV
 
 Explore Epic's Perforce depot directly from the command line.
 
+**Quick Start:**
+```bash
+asutils p4 setup  # Interactive setup (installs p4, configures connection)
+```
+
 | Command | Description |
 |---------|-------------|
+| `asutils p4 setup` | Interactive setup wizard |
 | `asutils p4 ls <path>` | List directories at depot path |
 | `asutils p4 find <pattern>` | Find files matching pattern |
 | `asutils p4 tree <path>` | Show depot structure as tree |
