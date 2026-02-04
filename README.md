@@ -172,6 +172,74 @@ asutils confluence page 12345678
 asutils confluence search "API" --space DEV
 ```
 
+### Perforce Explorer (Epic Games)
+
+Explore Epic's Perforce depot directly from the command line.
+
+**Quick Start:**
+```bash
+asutils p4 setup  # Interactive setup (installs p4, configures connection)
+```
+
+| Command | Description |
+|---------|-------------|
+| `asutils p4 setup` | Interactive setup wizard |
+| `asutils p4 ls <path>` | List directories at depot path |
+| `asutils p4 find <pattern>` | Find files matching pattern |
+| `asutils p4 tree <path>` | Show depot structure as tree |
+| `asutils p4 branches <depot>` | List available branches |
+| `asutils p4 info <path>` | Get file details (fstat) |
+| `asutils p4 history <path>` | Show file change history |
+| `asutils p4 cat <path>` | Print file contents |
+| `asutils p4 cl <number>` | Show changelist details |
+| `asutils p4 where <path>` | Show local workspace mapping |
+| `asutils p4 aliases` | Show available depot path aliases |
+| `asutils p4 verify` | Verify P4 connection |
+| `asutils p4 status` | Show P4 configuration |
+
+**Prerequisites:**
+- Perforce client (p4) installed
+- P4CONFIG or environment variables set (P4PORT, P4USER, P4CLIENT)
+
+**Depot Aliases:**
+| Alias | Path |
+|-------|------|
+| fortnite, fn | //Fortnite/Main/ |
+| valkyrie, fn-valkyrie | //Fortnite/Dev-Valkyrie/ |
+| ue5 | //UE5/Main/ |
+| ue4 | //UE4/Main/ |
+| eos | //EOSSDK/Main/ |
+| 3rdparty | //depot/3rdParty/ |
+| tools | //depot/InternalTools/ |
+| plugins | //GamePlugins/ |
+
+**Usage:**
+```bash
+# List using aliases
+asutils p4 ls fortnite
+asutils p4 ls valkyrie        # Use Dev-Valkyrie branch
+asutils p4 ls ue5 -f          # Include files
+
+# Discover branches
+asutils p4 branches fortnite  # All Fortnite branches
+asutils p4 branches fn --dev  # Only Dev branches
+asutils p4 branches fn -f "*Valkyrie*"
+
+# Find files by pattern
+asutils p4 find "*.Build.cs" -p fortnite -l 50
+asutils p4 find "*Controller*" -p //Fortnite/Dev-Valkyrie/Source/
+
+# Tree view
+asutils p4 tree valkyrie -d 3
+
+# File details
+asutils p4 info //Fortnite/Main/Build.cs
+asutils p4 cat //Fortnite/Main/Build.cs
+
+# Verify connection
+asutils p4 verify
+```
+
 ### Epic Setup
 
 One-command setup for Epic Games integrations.
