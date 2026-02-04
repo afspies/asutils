@@ -131,21 +131,20 @@ def search_files(pattern: str, scope: str = "//...", limit: int = 50) -> list[di
     scope_path = resolve_depot_path(scope)
 
     # Build search path
+    # P4 file patterns:
+    #   //path/... = all files recursively
+    #   //path/*.ext = files matching pattern in directory
+    #   //path/.../*.ext = files matching pattern in any subdirectory
     if pattern.startswith("//"):
         search_path = pattern
+    elif "/" in pattern:
+        # Pattern has directory components, append to scope
+        search_path = f"{scope_path.rstrip('/')}/{pattern}"
     else:
-        # Insert pattern into scope
+        # Simple filename pattern - search recursively
         # //Fortnite/Main + *.Build.cs -> //Fortnite/Main/.../*.Build.cs
         base = scope_path.rstrip("/")
-        if not base.endswith("..."):
-            base = f"{base}/..."
-
-        # If pattern has directory components, use as-is
-        if "/" in pattern:
-            search_path = f"{scope_path.rstrip('/')}/{pattern}"
-        else:
-            # Wildcard search
-            search_path = f"{base}/{pattern}" if not pattern.startswith("*") else f"{base}{pattern}"
+        search_path = f"{base}/.../{pattern}"
 
     stdout = run_p4_checked(["files", "-m", str(limit), search_path])
 

@@ -22,6 +22,7 @@ app = typer.Typer(name="p4", help="Explore Epic's Perforce depot")
 @app.command("setup")
 def setup_cmd(
     skip_install: Annotated[bool, typer.Option("--skip-install", help="Skip p4 installation check")] = False,
+    skip_claude: Annotated[bool, typer.Option("--skip-claude", help="Skip Claude Code agent/skill installation")] = False,
 ):
     """Interactive setup for Perforce CLI and configuration.
 
@@ -30,10 +31,12 @@ def setup_cmd(
     2. Configuring P4PORT (server address)
     3. Configuring P4USER (your username)
     4. Testing the connection
+    5. Installing Claude Code agent and skill
 
     Examples:
         asutils p4 setup
         asutils p4 setup --skip-install
+        asutils p4 setup --skip-claude
     """
     console = Console()
 
@@ -142,11 +145,6 @@ def setup_cmd(
 
     if success:
         rprint(f"[green]✓[/green] {message}")
-        rprint("\n[bold green]Setup complete![/bold green]")
-        rprint("\n[dim]Try these commands:[/dim]")
-        rprint("  [cyan]asutils p4 ls fortnite[/cyan]     # List Fortnite depot")
-        rprint("  [cyan]asutils p4 aliases[/cyan]        # Show all depot aliases")
-        rprint("  [cyan]asutils p4 tree ue5 -d 2[/cyan]  # Browse UE5 structure")
     else:
         rprint(f"[yellow]![/yellow] {message}")
         rprint("\n[dim]Connection not working yet. Common issues:[/dim]")
@@ -154,6 +152,36 @@ def setup_cmd(
         rprint("  • Incorrect username format (should be firstname.lastname)")
         rprint("  • Need to authenticate: run [cyan]p4 login[/cyan]")
         rprint("\n[dim]After fixing, verify with:[/dim] [cyan]asutils p4 verify[/cyan]")
+
+    # Step 5: Install Claude Code agent and skill
+    if not skip_claude:
+        rprint("\n[bold]Step 5: Installing Claude Code integration...[/bold]")
+
+        try:
+            from asutils.claude.agents import cli as agents_cli
+            from asutils.claude import skill as skills_cli
+
+            # Install the p4-explorer agent (function prints its own output)
+            try:
+                agents_cli.add_agent(name="epic/p4-explorer", all_agents=False, bundle=None, force=True)
+            except Exception as e:
+                rprint(f"[yellow]![/yellow] Could not install agent: {e}")
+
+            # Install the p4 skill (function prints its own output)
+            try:
+                skills_cli.add_skill(name="epic/p4", bundle=None, force=True)
+            except Exception as e:
+                rprint(f"[yellow]![/yellow] Could not install skill: {e}")
+
+        except ImportError as e:
+            rprint(f"[yellow]![/yellow] Claude Code integration not available: {e}")
+
+    # Final summary
+    rprint("\n[bold green]Setup complete![/bold green]")
+    rprint("\n[dim]Try these commands:[/dim]")
+    rprint("  [cyan]asutils p4 ls fortnite[/cyan]     # List Fortnite depot")
+    rprint("  [cyan]asutils p4 aliases[/cyan]        # Show all depot aliases")
+    rprint("  [cyan]asutils p4 tree ue5 -d 2[/cyan]  # Browse UE5 structure")
 
 
 def _add_to_shell_profile(var_name: str, value: str) -> None:
