@@ -43,15 +43,19 @@ rules:
         - "docker-compose *"
         - "bd *"
 
-  # Allow filesystem inspection
+  # Allow filesystem inspection (bare and with args)
   - tool: Bash
     action: allow
     match:
       command:
+        - "ls"
         - "ls *"
         - "find *"
+        - "du"
         - "du *"
+        - "df"
         - "df *"
+        - "tree"
         - "tree *"
         - "wc *"
         - "stat *"
@@ -60,9 +64,13 @@ rules:
         - "tail *"
         - "less *"
         - "file *"
+        - "which"
         - "which *"
+        - "whereis"
         - "whereis *"
         - "type *"
+        - "echo"
+        - "echo *"
 
   # Allow file operations in working directory
   - tool: Write
